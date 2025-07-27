@@ -30,6 +30,7 @@ const TasksPage = () => {
 
   // UI states
   const [showFilters, setShowFilters] = useState(false);
+  const [expandedTasks, setExpandedTasks] = useState(new Set()); // Track which tasks have expanded descriptions
   const filtersRef = useRef(null);
 
   // Priority colors and order for sorting
@@ -41,6 +42,24 @@ const TasksPage = () => {
   };
 
   const priorityOrder = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+
+  // Toggle description expansion
+  const toggleDescription = (taskId) => {
+    const newExpanded = new Set(expandedTasks);
+    if (newExpanded.has(taskId)) {
+      newExpanded.delete(taskId);
+    } else {
+      newExpanded.add(taskId);
+    }
+    setExpandedTasks(newExpanded);
+  };
+
+  // Helper function to truncate description
+  const truncateDescription = (text, maxLength = 100) => {
+    if (!text) return "";
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
+  };
 
   // Fetch tasks from API
   const fetchTasks = async () => {
@@ -591,10 +610,36 @@ const TasksPage = () => {
                       <h3 className={`font-medium ${task.completed ? "line-through text-gray-500" : ""}`} style={{ color: task.completed ? "#6b7280" : "#2d5016" }}>
                         {task.title}
                       </h3>
-                      {task.description && (
-                        <p className={`text-sm mt-1 ${task.completed ? "line-through text-gray-400" : ""}`} style={{ color: task.completed ? "#9ca3af" : "#6b7280" }}>
-                          {task.description}
-                        </p>
+
+                      {/* Enhanced Description Display */}
+                      {/* Enhanced Description Display */}
+                      {task.description && task.description.trim() && (
+                        <div className="mt-2 w-full max-w-full overflow-hidden">
+                          <div className={`text-sm ${task.completed ? "line-through text-gray-400" : ""}`} style={{ color: task.completed ? "#9ca3af" : "#6b7280" }}>
+                            {expandedTasks.has(task._id) ? <div className="whitespace-pre-wrap break-all max-w-full">{task.description}</div> : <div className="break-all max-w-full">{truncateDescription(task.description)}</div>}
+                          </div>
+
+                          {/* Show/Hide Toggle for long descriptions */}
+                          {task.description.length > 100 && (
+                            <button onClick={() => toggleDescription(task._id)} className="text-xs mt-1 text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center gap-1">
+                              {expandedTasks.has(task._id) ? (
+                                <>
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                  Show less
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                  Show more
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -614,7 +659,7 @@ const TasksPage = () => {
                   </div>
 
                   {/* Task Meta */}
-                  <div className="flex flex-wrap items-center gap-3 mt-2">
+                  <div className="flex flex-wrap items-center gap-3 mt-3">
                     {/* Priority */}
                     <span className={`px-2 py-1 text-xs font-medium rounded-full border ${priorityColors[task.priority]}`}>{task.priority}</span>
 

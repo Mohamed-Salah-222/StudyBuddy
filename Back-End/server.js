@@ -199,7 +199,7 @@ app.post("/api/auth/login", async (req, res) => {
 //*------------------------------------------------------------------------------Add a Task-------------------------------------------------------------------------------
 app.post("/api/tasks", authMiddleware, async (req, res) => {
   try {
-    const { title, dueDate, priority, tags } = req.body;
+    const { title, dueDate, priority, tags, description } = req.body;
     const userId = req.user.userId;
 
     const errors = [];
@@ -226,6 +226,7 @@ app.post("/api/tasks", authMiddleware, async (req, res) => {
       priority,
       tags,
       user: userId,
+      description,
     });
 
     const savedTask = await newTask.save();

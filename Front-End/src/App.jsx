@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
@@ -274,7 +274,6 @@ function App() {
       <div className="absolute inset-0 -z-10">
         <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse" style={{ background: "radial-gradient(circle, rgba(132, 169, 140, 0.08) 0%, transparent 70%)" }} />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse delay-2000" style={{ background: "radial-gradient(circle, rgba(212, 165, 116, 0.08) 0%, transparent 70%)" }} />
-        <div className="absolute top-1/2 right-0 w-64 h-64 rounded-full blur-2xl animate-ping" style={{ background: "radial-gradient(circle, rgba(82, 121, 111, 0.05) 0%, transparent 70%)", animationDuration: "6s" }} />
         <div className="absolute top-1/3 left-0 w-80 h-80 rounded-full blur-3xl animate-pulse delay-1000" style={{ background: "radial-gradient(circle, rgba(132, 169, 140, 0.06) 0%, transparent 70%)" }} />
       </div>
 
