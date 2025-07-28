@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext"; // Add this import
 
 const TasksPage = () => {
   const { token } = useAuth();
+  const { showNotification } = useNotification(); // Add this hook
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -105,8 +107,10 @@ const TasksPage = () => {
       const newTask = await response.json();
       setTasks([...tasks, newTask]);
       resetForm();
+      showNotification("Task added successfully! 🎉", "success"); // Add notification
     } catch (err) {
       setError("Failed to add task");
+      showNotification("Failed to add task", "error"); // Add notification
       console.error("Error adding task:", err);
     }
   };
@@ -130,8 +134,10 @@ const TasksPage = () => {
       const updatedTask = await response.json();
       setTasks(tasks.map((task) => (task._id === taskId ? updatedTask : task)));
       resetForm();
+      showNotification("Task updated successfully! ✨", "success"); // Add notification
     } catch (err) {
       setError("Failed to update task");
+      showNotification("Failed to update task", "error"); // Add notification
       console.error("Error updating task:", err);
     }
   };
@@ -153,8 +159,10 @@ const TasksPage = () => {
       }
 
       setTasks(tasks.filter((task) => task._id !== taskId));
+      showNotification("Task deleted successfully! 🗑️", "success"); // Add notification
     } catch (err) {
       setError("Failed to delete task");
+      showNotification("Failed to delete task", "error"); // Add notification
       console.error("Error deleting task:", err);
     }
   };
@@ -170,8 +178,15 @@ const TasksPage = () => {
         completed: !task.completed, // Only toggle the completed status
       };
       await updateTask(task._id, updateData);
+      // Show different notification based on completion status
+      if (!task.completed) {
+        showNotification("Task completed! Great job! ✅", "success");
+      } else {
+        showNotification("Task marked as pending", "success");
+      }
     } catch (err) {
       setError("Failed to update task");
+      showNotification("Failed to update task", "error"); // Add notification
       console.error("Error toggling task completion:", err);
     }
   };

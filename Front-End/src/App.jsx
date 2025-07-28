@@ -10,6 +10,8 @@ import ResetPasswordPage from "./components/ResetPasswordPage";
 import GoogleAuthCallbackPage from "./components/GoogleAuthCallbackPage";
 import VerifyPage from "./components/VerifyPage";
 import TasksPage from "./components/TasksPage";
+import StudyResourceCollector from "./components/StudyResourceCollector";
+import Notification from "./components/Notification";
 
 function App() {
   const { user, logout, token } = useAuth();
@@ -36,10 +38,10 @@ function App() {
       gradient: "linear-gradient(135deg, #52796f 0%, #84a98c 100%)",
     },
     {
-      title: "AI Study Planner",
-      description: "Get personalized study schedules created by AI based on your goals.",
-      icon: "🤖",
-      link: "/study-planner",
+      title: "Resources Planner",
+      description: "Organize your Resources with intelligent prioritization and deadline tracking.",
+      icon: "📚",
+      link: "/resources",
       gradient: "linear-gradient(135deg, #84a98c 0%, #d4a574 100%)",
     },
     {
@@ -270,6 +272,7 @@ function App() {
 
   return (
     <div className="min-h-screen font-sans relative" style={{ background: "linear-gradient(to bottom right, #fefcf7, #f8f6f0)" }}>
+      <Notification />
       {/* Background Elements */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse" style={{ background: "radial-gradient(circle, rgba(132, 169, 140, 0.08) 0%, transparent 70%)" }} />
@@ -428,6 +431,7 @@ function App() {
               <Route path="/reset-password/:userId/:token" element={<ResetPasswordPage />} />
               <Route path="/auth/google/callback" element={<GoogleAuthCallbackPage />} />
               <Route path="/todo" element={<TasksPage />} />
+              <Route path="/resources" element={<StudyResourceCollector />} />
 
               {/* Placeholder Routes */}
               <Route

@@ -15,6 +15,7 @@ const Task = require("./models/task");
 const authMiddleware = require("./Middleware/authMiddleware");
 const { sendVerificationEmail, sendPasswordResetEmail } = require("./services/emailServices");
 const passport = require("passport");
+const Resources = require("./models/Resources");
 
 //*--App + Port + dbURI
 const app = express();
@@ -242,6 +243,43 @@ app.post("/api/tasks", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Server error while creating a task" });
   }
 });
+//*----------------------------------------------------------------------------Add a Resource-----------------------------------------------------------------------------
+app.post("/api/resources", authMiddleware, async (req, res) => {
+  try {
+    const { title, url, description, type, tags } = req.body;
+    const userId = req.user.userId;
+    const errors = [];
+    if (!title) {
+      errors.push("Title is Required");
+    }
+    if (!type) {
+      errors.push("type is Required");
+    }
+    if (errors.length > 0) {
+      return res.status(400).json({ message: "Validation error", errors: errors });
+    }
+    const newResources = new Resources({
+      title,
+      url,
+      description,
+      type,
+      tags,
+      user: userId,
+    });
+    const savedResources = await newResources.save();
+    res.status(201).json(savedResources);
+  } catch (error) {
+    console.error("Server error while creating a Resource:", error);
+
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({ message: "Validation failed", errors: messages });
+    }
+
+    res.status(500).json({ message: "Server error while creating a Resource" });
+  }
+});
+
 //^----------------------------------------------------------------------------GET REQUESTS-------------------------------------------------------------------------------
 //*------------------------------------------------------------------------------get tasks--------------------------------------------------------------------------------
 app.get("/api/tasks", authMiddleware, async (req, res) => {
@@ -254,6 +292,19 @@ app.get("/api/tasks", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Error fetching tasks:", error);
     res.status(500).json({ message: "Server error while fetching tasks." });
+  }
+});
+//*---------------------------------------------------------------------------get Resources------------------------------------------------------------------------------
+app.get("/api/resources", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const resources = await Resources.find({ user: userId }).sort({ updatedAt: -1 });
+
+    res.status(200).json(resources);
+  } catch (error) {
+    console.error("Error fetching resources:", error);
+    res.status(500).json({ message: "Server error while fetching resources." });
   }
 });
 //^---------------------------------------------------------------------------Patch REQUESTS-----------------------------------------------------------------------------
@@ -322,6 +373,26 @@ app.delete("/api/tasks/:id", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Error deleting task:", error);
     res.status(500).json({ message: "Server error while deleting task." });
+  }
+});
+//*---------------------------------------------------------------------------Delete a Resource--------------------------------------------------------------------------
+app.delete("/api/resources/:id", authMiddleware, async (req, res) => {
+  try {
+    const resourceId = req.params.id;
+    const userId = req.user.userId;
+
+    const resourceToDelete = await Resources.findById(resourceId);
+    if (!resourceToDelete) {
+      return res.status(404).json({ message: "Resource not found" });
+    }
+    if (userId !== resourceToDelete.user.toString()) {
+      return res.status(403).json({ message: "Forbidden: You are not authorized to delete this resource." });
+    }
+    const deletedResource = await Resources.findByIdAndDelete(resourceId);
+    res.status(200).json({ message: "Resource deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting Resource:", error);
+    res.status(500).json({ message: "Server error while deleting Resource." });
   }
 });
 //*---------------------------------------------------------------------------------Google-------------------------------------------------------------------------------
