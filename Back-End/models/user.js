@@ -29,6 +29,11 @@ const userSchema = new Schema(
       type: Date,
       required: false,
     },
+    pushSubscription: {
+      type: Object, 
+      required: false, 
+      default: null, 
+    },
   },
   { timestamps: true }
 );

@@ -8,6 +8,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Agenda = require("agenda");
+const webPush = require("web-push");
 
 //*-- Models
 const User = require("./models/user");
@@ -23,6 +25,11 @@ const Reminder = require("./models/reminder");
 const app = express();
 const port = process.env.PORT || 3000;
 const dbURI = process.env.MONGODB_URI;
+const agenda = new Agenda({ db: { address: dbURI } });
+
+const publicVapidKey = process.env.VAPID_PUBLIC_KEY;
+const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
+const vapidSubject = process.env.VAPID_SUBJECT;
 
 //*--Middleware
 app.use(cors());
@@ -366,6 +373,32 @@ app.post("/api/reminder", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Server error while creating a Reminder", error: error.message });
   }
 });
+//*-------------------------------------------------------------------------Save Push Subscription API------------------------------------------------------------------------
+app.post("/api/subscribe", authMiddleware, async (req, res) => {
+  const userId = req.user.userId;
+  const subscription = req.body; // The PushSubscription object from the frontend
+
+  try {
+    if (!subscription || !subscription.endpoint || !subscription.keys) {
+      return res.status(400).json({ message: "Invalid subscription object provided." });
+    }
+
+    // Find the user and save their subscription
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    user.pushSubscription = subscription;
+    await user.save();
+
+    res.status(201).json({ message: "Subscription saved successfully." });
+  } catch (error) {
+    console.error("Error saving push subscription:", error);
+    res.status(500).json({ message: "Failed to save push subscription." });
+  }
+});
 //^----------------------------------------------------------------------------GET REQUESTS-------------------------------------------------------------------------------
 //*------------------------------------------------------------------------------get tasks--------------------------------------------------------------------------------
 app.get("/api/tasks", authMiddleware, async (req, res) => {
@@ -641,12 +674,121 @@ app.get("/api/auth/google/callback", passport.authenticate("google", { session: 
 
   res.redirect(`http://localhost:5173/auth/google/callback?token=${token}`);
 });
+//*---------------------------------------------------------------------------------Agenda-------------------------------------------------------------------------------
 
+agenda.define("send reminder notification", async (job) => {
+  console.log("Running 'send reminder notification' job...");
+  const now = new Date();
+
+  try {
+    // Find reminders that are due or overdue and haven't been notified yet
+    // Populate the 'user' field if you need user details (e.g., email) for notifications
+    const dueReminders = await Reminder.find({
+      dueDateTime: { $lte: now }, // Due date is less than or equal to current time
+      notified: false,
+    }).populate("user"); // Assuming you want user details for the notification
+
+    if (dueReminders.length > 0) {
+      console.log(`Found ${dueReminders.length} due reminder(s).`);
+    }
+
+    for (const reminder of dueReminders) {
+      console.log(`🔔 Sending notification for: "${reminder.title}" (User: ${reminder.user ? reminder.user.username : "Unknown"})`);
+
+      // TODO: This is where you'd integrate actual notification logic in the future.
+      // For example:
+      // await sendPushNotificationToUser(reminder.user.userId, reminder.title, reminder.description);
+      // await sendEmailNotification(reminder.user.email, reminder.title, 'Your reminder is due!');
+
+      // Mark the reminder as notified to prevent it from being processed again
+      reminder.notified = true;
+      await reminder.save();
+      console.log(`Updated Reminder ID: ${reminder._id} to notified: true`);
+    }
+  } catch (error) {
+    console.error("Error executing 'send reminder notification' job:", error);
+  }
+});
 //*-- DataBase + Starting the server
+// DataBase + Starting the server
 mongoose
   .connect(dbURI)
-  .then(() => {
+  .then(async () => {
     console.log("✅ Connected to MongoDB");
+
+    // --- Agenda Job Definition ---
+    // This defines WHAT the 'send reminder notification' job does
+    agenda.define("send reminder notification", async (job) => {
+      console.log("Running 'send reminder notification' job...");
+      const now = new Date();
+
+      try {
+        const dueReminders = await Reminder.find({
+          dueDateTime: { $lte: now },
+          notified: false,
+        }).populate("user"); // Ensure 'user' is populated to access pushSubscription
+
+        if (dueReminders.length > 0) {
+          console.log(`Found ${dueReminders.length} due reminder(s).`);
+        }
+
+        for (const reminder of dueReminders) {
+          // Check if the user associated with the reminder has a push subscription
+          if (reminder.user && reminder.user.pushSubscription) {
+            const subscription = reminder.user.pushSubscription;
+
+            // Define the payload for the push notification
+            const payload = JSON.stringify({
+              title: `Reminder: ${reminder.title}`,
+              body: `Don't forget: ${reminder.type || "General"}. Due: ${new Date(reminder.dueDateTime).toLocaleString()}`,
+              icon: "/icons/bell-icon.png", // Placeholder: You'll replace this with a real path to an icon in your frontend's public folder
+              url: "http://localhost:5173/reminders", // Placeholder: Replace with your actual frontend URL for reminders
+            });
+
+            try {
+              // Send the push notification
+              await webPush.sendNotification(subscription, payload);
+              console.log(`🔔 Push notification sent for: "${reminder.title}" to user ${reminder.user.username}`);
+
+              // Mark the reminder as notified ONLY AFTER successful sending
+              reminder.notified = true;
+              await reminder.save();
+              console.log(`Updated Reminder ID: ${reminder._id} to notified: true`);
+            } catch (pushError) {
+              console.error(`❌ Failed to send push notification for reminder "${reminder.title}" (ID: ${reminder._id}):`, pushError.message);
+              // If the subscription is invalid/expired (e.g., 410 Gone), remove it from the user
+              if (pushError.statusCode === 410) {
+                // GONE status code often means subscription is invalid/expired
+                console.log(`Removing expired subscription for user ${reminder.user.username}`);
+                reminder.user.pushSubscription = null; // Set to null as it's a single object
+                await reminder.user.save();
+              }
+              // Do NOT mark as notified if sending failed (unless it's a permanent invalid subscription)
+              // so it can be retried later or handled by other means if not 410
+            }
+          } else {
+            console.log(`ℹ️ User ${reminder.user ? reminder.user.username : "Unknown User"} has no push subscription for reminder: "${reminder.title}".`);
+            // If user has no subscription, we still mark it as notified so it doesn't endlessly try to send a push notification.
+            // This is where you might integrate an email fallback or internal notification if a push subscription doesn't exist.
+            reminder.notified = true;
+            await reminder.save();
+            console.log(`Updated Reminder ID: ${reminder._id} to notified: true (no push subscription).`);
+          }
+        }
+      } catch (error) {
+        console.error("Error executing 'send reminder notification' job:", error);
+      }
+    });
+
+    // --- Agenda Job Scheduling and Starting ---
+    // This tells Agenda WHEN to run the defined job
+    await agenda.every("1 minute", "send reminder notification");
+
+    // Start Agenda's processing of jobs
+    await agenda.start();
+    console.log("⏰ Agenda job scheduler started.");
+
+    // --- Start the Express server ---
     app.listen(port, () => {
       console.log(`🚀 Server listening on port ${port}`);
     });
@@ -655,3 +797,17 @@ mongoose
     console.error("❌ DATABASE CONNECTION FAILED:", err);
     process.exit(1);
   });
+
+// --- Graceful Shutdown for Agenda (KEEP THIS OUTSIDE the .then() block) ---
+async function gracefulShutdown() {
+  console.log("Shutting down Agenda gracefully...");
+  await agenda.stop();
+  console.log("Agenda stopped. Closing MongoDB connection.");
+  // It's good practice to close Mongoose connection too
+  await mongoose.disconnect();
+  console.log("MongoDB connection closed. Exiting process.");
+  process.exit(0);
+}
+
+process.on("SIGTERM", gracefulShutdown); // For system termination signals
+process.on("SIGINT", gracefulShutdown); // For Ctrl+C
