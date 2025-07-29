@@ -20,19 +20,51 @@ const TasksPage = () => {
     tags: "",
   });
 
-  // Filter and sort states
-  const [filters, setFilters] = useState({
-    status: "all", // all, completed, pending
-    priority: "all", // all, Urgent, High, Medium, Low
-    tag: "all",
-    search: "",
-  });
-  const [sortBy, setSortBy] = useState("dueDate"); // dueDate, priority, created, title
-  const [sortOrder, setSortOrder] = useState("asc"); // asc, desc
+  // Helper function to get saved preferences from localStorage
+  const getSavedPreferences = () => {
+    try {
+      const saved = localStorage.getItem("taskPreferences");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          filters: parsed.filters || {
+            status: "all",
+            priority: "all",
+            tag: "all",
+            search: "",
+          },
+          sortBy: parsed.sortBy || "dueDate",
+          sortOrder: parsed.sortOrder || "asc",
+        };
+      }
+    } catch (error) {
+      console.error("Error loading saved preferences:", error);
+    }
+
+    return {
+      filters: {
+        status: "all",
+        priority: "all",
+        tag: "all",
+        search: "",
+      },
+      sortBy: "dueDate",
+      sortOrder: "asc",
+    };
+  };
+
+  const savedPrefs = getSavedPreferences();
+
+  // Filter and sort states - Initialize with saved preferences
+  const [filters, setFilters] = useState(savedPrefs.filters);
+  const [sortBy, setSortBy] = useState(savedPrefs.sortBy);
+  const [sortOrder, setSortOrder] = useState(savedPrefs.sortOrder);
 
   // UI states
   const [showFilters, setShowFilters] = useState(false);
   const [expandedTasks, setExpandedTasks] = useState(new Set()); // Track which tasks have expanded descriptions
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // Add delete modal state
+  const [taskToDelete, setTaskToDelete] = useState(null); // Track which task to delete
   const filtersRef = useRef(null);
 
   // Priority colors and order for sorting
@@ -54,6 +86,38 @@ const TasksPage = () => {
       newExpanded.add(taskId);
     }
     setExpandedTasks(newExpanded);
+  };
+
+  // Helper function to save preferences to localStorage
+  const savePreferences = (newFilters, newSortBy, newSortOrder) => {
+    try {
+      const preferences = {
+        filters: newFilters,
+        sortBy: newSortBy,
+        sortOrder: newSortOrder,
+      };
+      localStorage.setItem("taskPreferences", JSON.stringify(preferences));
+    } catch (error) {
+      console.error("Error saving preferences:", error);
+    }
+  };
+
+  // Update setFilters to save preferences
+  const updateFilters = (newFilters) => {
+    setFilters(newFilters);
+    savePreferences(newFilters, sortBy, sortOrder);
+  };
+
+  // Update setSortBy to save preferences
+  const updateSortBy = (newSortBy) => {
+    setSortBy(newSortBy);
+    savePreferences(filters, newSortBy, sortOrder);
+  };
+
+  // Update setSortOrder to save preferences
+  const updateSortOrder = (newSortOrder) => {
+    setSortOrder(newSortOrder);
+    savePreferences(filters, sortBy, newSortOrder);
   };
 
   // Helper function to truncate description
@@ -142,12 +206,17 @@ const TasksPage = () => {
     }
   };
 
-  // Delete task
-  const deleteTask = async (taskId) => {
-    if (!window.confirm("Are you sure you want to delete this task?")) return;
+  // Delete task - Updated to use modal
+  const handleDeleteClick = (task) => {
+    setTaskToDelete(task);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!taskToDelete) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/${taskId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/${taskToDelete._id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -158,13 +227,21 @@ const TasksPage = () => {
         throw new Error("Failed to delete task");
       }
 
-      setTasks(tasks.filter((task) => task._id !== taskId));
+      setTasks(tasks.filter((task) => task._id !== taskToDelete._id));
       showNotification("Task deleted successfully! 🗑️", "success"); // Add notification
     } catch (err) {
       setError("Failed to delete task");
       showNotification("Failed to delete task", "error"); // Add notification
       console.error("Error deleting task:", err);
+    } finally {
+      setShowDeleteModal(false);
+      setTaskToDelete(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setTaskToDelete(null);
   };
 
   // Toggle task completion - FIXED: Only send the fields that your API expects
@@ -355,7 +432,7 @@ const TasksPage = () => {
                     <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
                       Search
                     </label>
-                    <input type="text" value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} placeholder="Search tasks..." className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)", focusRingColor: "#52796f" }} />
+                    <input type="text" value={filters.search} onChange={(e) => updateFilters({ ...filters, search: e.target.value })} placeholder="Search tasks..." className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)", focusRingColor: "#52796f" }} />
                   </div>
 
                   {/* Status Filter */}
@@ -363,7 +440,7 @@ const TasksPage = () => {
                     <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
                       Status
                     </label>
-                    <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
+                    <select value={filters.status} onChange={(e) => updateFilters({ ...filters, status: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
                       <option value="all">All Tasks</option>
                       <option value="pending">Pending</option>
                       <option value="completed">Completed</option>
@@ -375,7 +452,7 @@ const TasksPage = () => {
                     <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
                       Priority
                     </label>
-                    <select value={filters.priority} onChange={(e) => setFilters({ ...filters, priority: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
+                    <select value={filters.priority} onChange={(e) => updateFilters({ ...filters, priority: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
                       <option value="all">All Priorities</option>
                       <option value="Urgent">Urgent</option>
                       <option value="High">High</option>
@@ -390,7 +467,7 @@ const TasksPage = () => {
                       <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
                         Tag
                       </label>
-                      <select value={filters.tag} onChange={(e) => setFilters({ ...filters, tag: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
+                      <select value={filters.tag} onChange={(e) => updateFilters({ ...filters, tag: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
                         <option value="all">All Tags</option>
                         {uniqueTags.map((tag) => (
                           <option key={tag} value={tag}>
@@ -407,13 +484,13 @@ const TasksPage = () => {
                       Sort By
                     </label>
                     <div className="flex gap-2">
-                      <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
+                      <select value={sortBy} onChange={(e) => updateSortBy(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
                         <option value="dueDate">Due Date</option>
                         <option value="priority">Priority</option>
                         <option value="created">Created</option>
                         <option value="title">Title</option>
                       </select>
-                      <button onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")} className="px-3 py-2 border rounded-lg hover:bg-gray-50 transition-colors duration-200" style={{ borderColor: "rgba(82, 121, 111, 0.2)", color: "#52796f" }}>
+                      <button onClick={() => updateSortOrder(sortOrder === "asc" ? "desc" : "asc")} className="px-3 py-2 border rounded-lg hover:bg-gray-50 transition-colors duration-200" style={{ borderColor: "rgba(82, 121, 111, 0.2)", color: "#52796f" }}>
                         {sortOrder === "asc" ? "↑" : "↓"}
                       </button>
                     </div>
@@ -585,6 +662,52 @@ const TasksPage = () => {
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && taskToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full" style={{ backgroundColor: "#fefcf7" }}>
+            <div className="p-6">
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-bold mb-2" style={{ color: "#2d5016" }}>
+                  Delete Task
+                </h3>
+                <p className="text-sm mb-2" style={{ color: "#6b7280" }}>
+                  Are you sure you want to delete this task?
+                </p>
+                <div className="p-3 rounded-lg border bg-gray-50 text-left" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
+                  <p className="font-medium text-sm" style={{ color: "#2d5016" }}>
+                    "{taskToDelete.title}"
+                  </p>
+                  {taskToDelete.description && (
+                    <p className="text-xs mt-1" style={{ color: "#6b7280" }}>
+                      {truncateDescription(taskToDelete.description, 60)}
+                    </p>
+                  )}
+                </div>
+                <p className="text-xs mt-3 text-red-600">This action cannot be undone.</p>
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={cancelDelete} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors duration-200" style={{ borderColor: "rgba(82, 121, 111, 0.2)", color: "#52796f" }}>
+                  Cancel
+                </button>
+                <button onClick={confirmDelete} className="flex-1 px-4 py-2 text-white rounded-lg font-medium transition-all duration-300 hover:scale-105 bg-red-600 hover:bg-red-700">
+                  Delete Task
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tasks List */}
       <div className="space-y-3">
         {filteredTasks.length === 0 ? (
@@ -627,7 +750,6 @@ const TasksPage = () => {
                       </h3>
 
                       {/* Enhanced Description Display */}
-                      {/* Enhanced Description Display */}
                       {task.description && task.description.trim() && (
                         <div className="mt-2 w-full max-w-full overflow-hidden">
                           <div className={`text-sm ${task.completed ? "line-through text-gray-400" : ""}`} style={{ color: task.completed ? "#9ca3af" : "#6b7280" }}>
@@ -665,7 +787,7 @@ const TasksPage = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                      <button onClick={() => deleteTask(task._id)} className="p-1 text-gray-400 hover:text-red-600 transition-colors duration-200" title="Delete task">
+                      <button onClick={() => handleDeleteClick(task)} className="p-1 text-gray-400 hover:text-red-600 transition-colors duration-200" title="Delete task">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>

@@ -16,7 +16,6 @@ const resourcesSchema = new Schema(
     type: {
       type: String,
       enum: ["link", "text", "image", "video", "document"],
-      required: true,
     },
     tags: {
       type: [String],

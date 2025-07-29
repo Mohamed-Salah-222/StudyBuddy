@@ -2,6 +2,52 @@ import React, { useState, useEffect } from "react";
 import { Plus, Search, Filter, ExternalLink, Trash2, Tag, Calendar, Globe, FileText, Image, Video, Book } from "lucide-react";
 import { useNotification } from "../context/NotificationContext"; // Adjust path as needed
 
+// Delete Confirmation Modal Component
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, resourceTitle, loading }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+        {/* Modal Content */}
+        <div className="p-6 text-center">
+          {/* Trash Icon */}
+          <div className="mx-auto mb-6 w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </div>
+
+          {/* Title */}
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Delete Resource</h3>
+
+          {/* Message */}
+          <p className="text-gray-600 mb-2">Are you sure you want to delete this resource?</p>
+
+          {/* Resource Title in Box */}
+          <div className="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
+            <p className="text-sm font-medium text-gray-700 truncate">"{resourceTitle}"</p>
+            <p className="text-xs text-orange-600 mt-1">Resources are not uploading to Google Cloud Storage on the prod...</p>
+          </div>
+
+          {/* Warning Text */}
+          <p className="text-sm text-red-500 mb-6">This action cannot be undone.</p>
+
+          {/* Buttons */}
+          <div className="flex gap-3">
+            <button onClick={onClose} disabled={loading} className="flex-1 px-4 py-2 text-gray-600 font-medium rounded-lg hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50">
+              Cancel
+            </button>
+            <button onClick={onConfirm} disabled={loading} className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50">
+              {loading ? "Deleting..." : "Delete Resource"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const StudyResourceCollector = () => {
   const { showNotification } = useNotification();
   const [resources, setResources] = useState([]);
@@ -13,6 +59,11 @@ const StudyResourceCollector = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState("");
+
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [resourceToDelete, setResourceToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -190,16 +241,21 @@ const StudyResourceCollector = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this resource?")) {
-      return;
-    }
+  const handleDeleteClick = (resource) => {
+    setResourceToDelete(resource);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!resourceToDelete) return;
+
+    setDeleteLoading(true);
 
     try {
-      console.log("Deleting resource:", id); // Debug log
-      console.log("DELETE URL:", `${import.meta.env.VITE_API_URL}/api/resources/${id}`); // Debug log
+      console.log("Deleting resource:", resourceToDelete._id); // Debug log
+      console.log("DELETE URL:", `${import.meta.env.VITE_API_URL}/api/resources/${resourceToDelete._id}`); // Debug log
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resources/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resources/${resourceToDelete._id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
@@ -219,11 +275,30 @@ const StudyResourceCollector = () => {
       }
 
       // Remove the resource from the list
-      setResources((prevResources) => prevResources.filter((r) => r._id !== id));
+      setResources((prevResources) => prevResources.filter((r) => r._id !== resourceToDelete._id));
       showNotification("Resource deleted successfully!", "success");
+
+      // Close modal and reset state
+      setShowDeleteModal(false);
+      setResourceToDelete(null);
     } catch (error) {
       console.error("Error deleting resource:", error);
       showNotification(`Failed to delete resource: ${error.message}`, "error");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setResourceToDelete(null);
+  };
+
+  // Legacy delete function (kept for reference, but replaced with modal)
+  const handleDelete = async (id) => {
+    const resource = resources.find((r) => r._id === id);
+    if (resource) {
+      handleDeleteClick(resource);
     }
   };
 
@@ -242,8 +317,6 @@ const StudyResourceCollector = () => {
       day: "numeric",
     });
   };
-
-  const allTags = [...new Set(resources.flatMap((r) => r.tags))];
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#fefcf7" }}>
@@ -336,10 +409,10 @@ const StudyResourceCollector = () => {
                 }}
               >
                 <option value="all">All Types</option>
-                <option value="article">Articles</option>
+                <option value="Links">Links</option>
                 <option value="video">Videos</option>
                 <option value="image">Images</option>
-                <option value="book">Books</option>
+                <option value="Document">Documents</option>
                 <option value="other">Other</option>
               </select>
 
@@ -430,11 +503,11 @@ const StudyResourceCollector = () => {
                       focusRingColor: "#84a98c",
                     }}
                   >
-                    <option value="article">Article</option>
-                    <option value="video">Video</option>
-                    <option value="image">Image</option>
-                    <option value="book">Book</option>
-                    <option value="other">Other</option>
+                    <option value="link">link</option>
+                    <option value="video">video</option>
+                    <option value="image">image</option>
+                    <option value="document">document</option>
+                    <option value="text">text</option>
                   </select>
                 </div>
 
@@ -468,6 +541,9 @@ const StudyResourceCollector = () => {
           </div>
         )}
 
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal isOpen={showDeleteModal} onClose={handleCancelDelete} onConfirm={handleConfirmDelete} resourceTitle={resourceToDelete?.title || ""} loading={deleteLoading} />
+
         {/* Error Display */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -499,7 +575,7 @@ const StudyResourceCollector = () => {
                     {getTypeIcon(resource.type)}
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(resource.type)}`}>{resource.type}</span>
                   </div>
-                  <button onClick={() => handleDelete(resource._id)} className="text-gray-400 hover:text-red-500 transition-colors">
+                  <button onClick={() => handleDeleteClick(resource)} className="text-gray-400 hover:text-red-500 transition-colors">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -590,7 +666,7 @@ const StudyResourceCollector = () => {
                         <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline" style={{ color: "#52796f" }}>
                           <ExternalLink size={16} />
                         </a>
-                        <button onClick={() => handleDelete(resource._id)} className="text-gray-400 hover:text-red-500 transition-colors">
+                        <button onClick={() => handleDeleteClick(resource)} className="text-gray-400 hover:text-red-500 transition-colors">
                           <Trash2 size={16} />
                         </button>
                       </div>

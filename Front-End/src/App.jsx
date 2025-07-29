@@ -370,9 +370,6 @@ function App() {
                       <span className="text-white text-sm font-bold">{user.username.charAt(0).toUpperCase()}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-xs" style={{ color: "#6b7280" }}>
-                        Welcome back
-                      </span>
                       <span className="text-sm font-semibold" style={{ color: "#2d5016" }}>
                         {user.username}
                       </span>

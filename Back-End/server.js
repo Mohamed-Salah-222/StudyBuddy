@@ -252,9 +252,6 @@ app.post("/api/resources", authMiddleware, async (req, res) => {
     if (!title) {
       errors.push("Title is Required");
     }
-    if (!type) {
-      errors.push("type is Required");
-    }
     if (errors.length > 0) {
       return res.status(400).json({ message: "Validation error", errors: errors });
     }
