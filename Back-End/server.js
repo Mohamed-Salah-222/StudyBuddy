@@ -20,6 +20,7 @@ const passport = require("passport");
 const Resources = require("./models/resources");
 const StudyPlan = require("./models/studyPlan");
 const Reminder = require("./models/reminder");
+const JobManager = require("./jobs/jobManager"); // Adjust path as needed
 
 //*--App + Port + dbURI
 const app = express();
@@ -30,6 +31,9 @@ const agenda = new Agenda({ db: { address: dbURI } });
 const publicVapidKey = process.env.VAPID_PUBLIC_KEY;
 const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
 const vapidSubject = process.env.VAPID_SUBJECT;
+
+// Configure webPush with VAPID details
+webPush.setVapidDetails(vapidSubject, publicVapidKey, privateVapidKey);
 
 //*--Middleware
 app.use(cors());
@@ -195,6 +199,9 @@ app.post("/api/auth/login", async (req, res) => {
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+    if (!user.isVerified) {
+      return res.status(401).json({ message: "Please verify your email before logging in" });
+    }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -339,7 +346,7 @@ app.post("/api/studyplan", authMiddleware, async (req, res) => {
 app.post("/api/reminder", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { title, dueDateTime, type, notifed } = req.body;
+    const { title, dueDateTime, type, notified } = req.body;
     const validationErrors = [];
     if (!title) {
       validationErrors.push("title is required");
@@ -353,14 +360,29 @@ app.post("/api/reminder", authMiddleware, async (req, res) => {
     if (validationErrors.length > 0) {
       return res.status(400).json({ message: "Validation error", errors: validationErrors });
     }
+
     const newReminder = new Reminder({
       title,
       dueDateTime,
       type,
       user: userId,
-      notifed,
+      notified: notified || false,
     });
+
     const savedReminder = await newReminder.save();
+
+    // Schedule the reminder job if the due date is in the future
+    const now = new Date();
+    if (new Date(dueDateTime) > now && jobManager) {
+      try {
+        await jobManager.scheduleReminder(savedReminder._id, new Date(dueDateTime));
+        console.log(`📅 Scheduled job for reminder: ${savedReminder.title}`);
+      } catch (error) {
+        console.error("⚠️ Error scheduling reminder job:", error);
+        // Don't fail the request if job scheduling fails
+      }
+    }
+
     res.status(201).json(savedReminder);
   } catch (error) {
     console.error("Server error while creating a Reminder:", error);
@@ -446,6 +468,30 @@ app.get("/api/reminder", authMiddleware, async (req, res) => {
   } catch (error) {
     console.log("Error Fetching reminder", error);
     res.status(500).json({ message: "Server error while fetching reminder" });
+  }
+});
+//?---------
+app.get("/api/reminder/jobs/stats", authMiddleware, async (req, res) => {
+  try {
+    if (!jobManager) {
+      return res.status(503).json({
+        success: false,
+        message: "Job manager not available",
+      });
+    }
+
+    const stats = await jobManager.getStats();
+    res.json({
+      success: true,
+      data: stats,
+    });
+  } catch (error) {
+    console.error("❌ Error getting job stats:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error getting job statistics",
+      error: error.message,
+    });
   }
 });
 //^---------------------------------------------------------------------------Patch REQUESTS-----------------------------------------------------------------------------
@@ -543,8 +589,12 @@ app.patch("/api/reminder/:id", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Reminder not found" });
     }
     if (userId !== reminderToUpdate.user.toString()) {
-      return res.status(403).json({ message: "Forbidden: You are not authorized to update this task." });
+      return res.status(403).json({ message: "Forbidden: You are not authorized to update this reminder." });
     }
+
+    // Store old due date to compare
+    const oldDueDateTime = reminderToUpdate.dueDateTime;
+
     const updateFields = {};
     if (title !== undefined) updateFields.title = title;
     if (dueDateTime !== undefined) updateFields.dueDateTime = dueDateTime;
@@ -554,6 +604,24 @@ app.patch("/api/reminder/:id", authMiddleware, async (req, res) => {
     if (!updatedReminder) {
       return res.status(404).json({ message: "Reminder not found after update attempt." });
     }
+
+    // Handle job rescheduling if due date changed
+    if (dueDateTime && new Date(dueDateTime).getTime() !== oldDueDateTime.getTime() && jobManager) {
+      try {
+        // Cancel old scheduled job
+        await jobManager.cancelReminder(updatedReminder._id);
+
+        // Schedule new job if due date is in the future and not notified
+        const now = new Date();
+        if (new Date(dueDateTime) > now && !updatedReminder.notified) {
+          await jobManager.scheduleReminder(updatedReminder._id, new Date(dueDateTime));
+          console.log(`📅 Rescheduled job for reminder: ${updatedReminder.title}`);
+        }
+      } catch (error) {
+        console.error("⚠️ Error rescheduling reminder job:", error);
+      }
+    }
+
     res.status(200).json(updatedReminder);
   } catch (error) {
     console.error("Error Updating Reminder:", error);
@@ -583,7 +651,7 @@ app.delete("/api/tasks/:id", authMiddleware, async (req, res) => {
       return res.status(403).json({ message: "Forbidden: You are not authorized to delete this task." });
     }
 
-    const deletedTask = await Task.findByIdAndDelete(taskId);
+    await Task.findByIdAndDelete(taskId);
 
     res.status(200).json({ message: "Task deleted successfully." });
   } catch (error) {
@@ -604,7 +672,7 @@ app.delete("/api/resources/:id", authMiddleware, async (req, res) => {
     if (userId !== resourceToDelete.user.toString()) {
       return res.status(403).json({ message: "Forbidden: You are not authorized to delete this resource." });
     }
-    const deletedResource = await Resources.findByIdAndDelete(resourceId);
+    await Resources.findByIdAndDelete(resourceId);
     res.status(200).json({ message: "Resource deleted successfully." });
   } catch (error) {
     console.error("Error deleting Resource:", error);
@@ -625,7 +693,7 @@ app.delete("/api/studyplan/:id", authMiddleware, async (req, res) => {
     if (userId !== planToDelete.user.toString()) {
       return res.status(403).json({ message: "Forbidden: You are not authorized to delete this Plan." });
     }
-    const deletedPlan = await StudyPlan.findByIdAndDelete(planId);
+    await StudyPlan.findByIdAndDelete(planId);
     res.status(200).json({ message: "Plan deleted successfully." });
   } catch (error) {
     console.error("Error deleting PLan:", error);
@@ -640,12 +708,23 @@ app.delete("/api/reminder/:id", authMiddleware, async (req, res) => {
 
     const reminderToDelete = await Reminder.findById(reminderId);
     if (!reminderToDelete) {
-      return res.status(404).json({ message: "Error reminder not found" });
+      return res.status(404).json({ message: "Reminder not found" });
     }
     if (userId !== reminderToDelete.user.toString()) {
-      return res.status(403).json({ message: "Forbidden: You are not authorized to delete this Plan." });
+      return res.status(403).json({ message: "Forbidden: You are not authorized to delete this reminder." });
     }
-    const deletedReminder = await Reminder.findByIdAndDelete(reminderId);
+
+    // Cancel any scheduled jobs for this reminder
+    if (jobManager) {
+      try {
+        await jobManager.cancelReminder(reminderToDelete._id);
+        console.log(`🗑️ Cancelled jobs for deleted reminder: ${reminderToDelete.title}`);
+      } catch (error) {
+        console.error("⚠️ Error cancelling reminder jobs:", error);
+      }
+    }
+
+    await Reminder.findByIdAndDelete(reminderId);
 
     res.status(200).json({ message: "Reminder deleted successfully." });
   } catch (error) {
@@ -676,119 +755,22 @@ app.get("/api/auth/google/callback", passport.authenticate("google", { session: 
 });
 //*---------------------------------------------------------------------------------Agenda-------------------------------------------------------------------------------
 
-agenda.define("send reminder notification", async (job) => {
-  console.log("Running 'send reminder notification' job...");
-  const now = new Date();
-
-  try {
-    // Find reminders that are due or overdue and haven't been notified yet
-    // Populate the 'user' field if you need user details (e.g., email) for notifications
-    const dueReminders = await Reminder.find({
-      dueDateTime: { $lte: now }, // Due date is less than or equal to current time
-      notified: false,
-    }).populate("user"); // Assuming you want user details for the notification
-
-    if (dueReminders.length > 0) {
-      console.log(`Found ${dueReminders.length} due reminder(s).`);
-    }
-
-    for (const reminder of dueReminders) {
-      console.log(`🔔 Sending notification for: "${reminder.title}" (User: ${reminder.user ? reminder.user.username : "Unknown"})`);
-
-      // TODO: This is where you'd integrate actual notification logic in the future.
-      // For example:
-      // await sendPushNotificationToUser(reminder.user.userId, reminder.title, reminder.description);
-      // await sendEmailNotification(reminder.user.email, reminder.title, 'Your reminder is due!');
-
-      // Mark the reminder as notified to prevent it from being processed again
-      reminder.notified = true;
-      await reminder.save();
-      console.log(`Updated Reminder ID: ${reminder._id} to notified: true`);
-    }
-  } catch (error) {
-    console.error("Error executing 'send reminder notification' job:", error);
-  }
-});
-//*-- DataBase + Starting the server
-// DataBase + Starting the server
 mongoose
   .connect(dbURI)
   .then(async () => {
     console.log("✅ Connected to MongoDB");
 
-    // --- Agenda Job Definition ---
-    // This defines WHAT the 'send reminder notification' job does
-    agenda.define("send reminder notification", async (job) => {
-      console.log("Running 'send reminder notification' job...");
-      const now = new Date();
+    // Initialize and start Job Manager after MongoDB connection
+    try {
+      jobManager = new JobManager();
+      await jobManager.start();
+      console.log("✅ Background job system initialized");
+    } catch (error) {
+      console.error("❌ Failed to initialize job manager:", error);
+      process.exit(1);
+    }
 
-      try {
-        const dueReminders = await Reminder.find({
-          dueDateTime: { $lte: now },
-          notified: false,
-        }).populate("user"); // Ensure 'user' is populated to access pushSubscription
-
-        if (dueReminders.length > 0) {
-          console.log(`Found ${dueReminders.length} due reminder(s).`);
-        }
-
-        for (const reminder of dueReminders) {
-          // Check if the user associated with the reminder has a push subscription
-          if (reminder.user && reminder.user.pushSubscription) {
-            const subscription = reminder.user.pushSubscription;
-
-            // Define the payload for the push notification
-            const payload = JSON.stringify({
-              title: `Reminder: ${reminder.title}`,
-              body: `Don't forget: ${reminder.type || "General"}. Due: ${new Date(reminder.dueDateTime).toLocaleString()}`,
-              icon: "/icons/bell-icon.png", // Placeholder: You'll replace this with a real path to an icon in your frontend's public folder
-              url: "http://localhost:5173/reminders", // Placeholder: Replace with your actual frontend URL for reminders
-            });
-
-            try {
-              // Send the push notification
-              await webPush.sendNotification(subscription, payload);
-              console.log(`🔔 Push notification sent for: "${reminder.title}" to user ${reminder.user.username}`);
-
-              // Mark the reminder as notified ONLY AFTER successful sending
-              reminder.notified = true;
-              await reminder.save();
-              console.log(`Updated Reminder ID: ${reminder._id} to notified: true`);
-            } catch (pushError) {
-              console.error(`❌ Failed to send push notification for reminder "${reminder.title}" (ID: ${reminder._id}):`, pushError.message);
-              // If the subscription is invalid/expired (e.g., 410 Gone), remove it from the user
-              if (pushError.statusCode === 410) {
-                // GONE status code often means subscription is invalid/expired
-                console.log(`Removing expired subscription for user ${reminder.user.username}`);
-                reminder.user.pushSubscription = null; // Set to null as it's a single object
-                await reminder.user.save();
-              }
-              // Do NOT mark as notified if sending failed (unless it's a permanent invalid subscription)
-              // so it can be retried later or handled by other means if not 410
-            }
-          } else {
-            console.log(`ℹ️ User ${reminder.user ? reminder.user.username : "Unknown User"} has no push subscription for reminder: "${reminder.title}".`);
-            // If user has no subscription, we still mark it as notified so it doesn't endlessly try to send a push notification.
-            // This is where you might integrate an email fallback or internal notification if a push subscription doesn't exist.
-            reminder.notified = true;
-            await reminder.save();
-            console.log(`Updated Reminder ID: ${reminder._id} to notified: true (no push subscription).`);
-          }
-        }
-      } catch (error) {
-        console.error("Error executing 'send reminder notification' job:", error);
-      }
-    });
-
-    // --- Agenda Job Scheduling and Starting ---
-    // This tells Agenda WHEN to run the defined job
-    await agenda.every("1 minute", "send reminder notification");
-
-    // Start Agenda's processing of jobs
-    await agenda.start();
-    console.log("⏰ Agenda job scheduler started.");
-
-    // --- Start the Express server ---
+    // Start the Express server
     app.listen(port, () => {
       console.log(`🚀 Server listening on port ${port}`);
     });
@@ -798,16 +780,21 @@ mongoose
     process.exit(1);
   });
 
-// --- Graceful Shutdown for Agenda (KEEP THIS OUTSIDE the .then() block) ---
+// Graceful Shutdown
 async function gracefulShutdown() {
-  console.log("Shutting down Agenda gracefully...");
-  await agenda.stop();
-  console.log("Agenda stopped. Closing MongoDB connection.");
-  // It's good practice to close Mongoose connection too
+  console.log("🛑 Shutting down gracefully...");
+
+  if (jobManager) {
+    console.log("Stopping Job Manager...");
+    await jobManager.stop();
+    console.log("Job Manager stopped.");
+  }
+
+  console.log("Closing MongoDB connection...");
   await mongoose.disconnect();
   console.log("MongoDB connection closed. Exiting process.");
   process.exit(0);
 }
 
-process.on("SIGTERM", gracefulShutdown); // For system termination signals
-process.on("SIGINT", gracefulShutdown); // For Ctrl+C
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);

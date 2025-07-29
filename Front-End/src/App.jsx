@@ -13,20 +13,49 @@ import TasksPage from "./components/TasksPage";
 import StudyResourceCollector from "./components/StudyResourceCollector";
 import Notification from "./components/Notification";
 
+// Utility function for VAPID key conversion
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+// VAPID Public Key - Replace with your actual key
+const VAPID_PUBLIC_KEY = "BBjKbsfZi6e5QAP5Pf3mQaD7IOJ8JC_-seZvU-SQKsHQiiGjhsb-_jFKJHSeYck8uXrZI4JVSnmtzaXYA_YRylc";
+
 function App() {
   const { user, logout, token } = useAuth();
   const navigate = useNavigate();
 
-  // State for notification bell
+  // State for notification bell and tasks
   const [urgentHighTasks, setUrgentHighTasks] = useState([]);
-  const [notificationCount, setNotificationCount] = useState(0);
+  const [taskNotificationCount, setTaskNotificationCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [activeTab, setActiveTab] = useState("tasks"); // 'tasks' or 'reminders'
   const notificationsRef = useRef(null);
+
+  // State for reminder notifications - now fetched from API
+  const [reminderNotifications, setReminderNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isDeletingReminder, setIsDeletingReminder] = useState(null);
 
   // State for sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const sidebarRef = useRef(null);
+
+  // State for push notifications
+  const [pushNotificationEnabled, setPushNotificationEnabled] = useState(false);
+  const [pushPermission, setPushPermission] = useState(Notification.permission);
+  const [pushMessage, setPushMessage] = useState("");
+  const [isSubscribing, setIsSubscribing] = useState(false);
 
   // Define features
   const features = [
@@ -78,7 +107,7 @@ function App() {
   const fetchTasks = async () => {
     if (!token) {
       setUrgentHighTasks([]);
-      setNotificationCount(0);
+      setTaskNotificationCount(0);
       return;
     }
 
@@ -104,16 +133,243 @@ function App() {
       const filteredTasks = tasks.filter((task) => (task.priority === "Urgent" || task.priority === "High") && !task.completed);
 
       setUrgentHighTasks(filteredTasks);
-      setNotificationCount(filteredTasks.length);
+      setTaskNotificationCount(filteredTasks.length);
     } catch (error) {
       console.error("Error fetching tasks for notifications:", error);
     }
   };
 
-  // Effect to fetch tasks when the component mounts or user/token changes
+  // Function to fetch reminder notifications from API
+  const fetchReminderNotifications = async () => {
+    if (!token) {
+      setReminderNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/reminder`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          console.error("Authentication failed or token expired. Logging out.");
+          logout();
+          navigate("/login");
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reminders = await response.json();
+
+      // Transform the reminders to match the notification format
+      const transformedReminders = reminders.map((reminder) => ({
+        _id: reminder._id,
+        title: reminder.title || reminder.subject || "Reminder",
+        type: reminder.type || "reminder",
+        dueTime: reminder.reminderTime || reminder.createdAt,
+        isRead: reminder.notified || false, // Use notified field as read status
+        createdAt: reminder.createdAt,
+        description: reminder.description,
+        originalReminder: reminder, // Keep reference to original reminder object
+      }));
+
+      setReminderNotifications(transformedReminders);
+
+      // Count unread notifications (where notified is false)
+      const unreadReminders = transformedReminders.filter((n) => !n.isRead);
+      setUnreadCount(unreadReminders.length);
+    } catch (error) {
+      console.error("Error fetching reminder notifications:", error);
+      setReminderNotifications([]);
+      setUnreadCount(0);
+    }
+  };
+
+  // Function to delete a reminder
+  const deleteReminder = async (reminderId) => {
+    if (!token) return;
+
+    setIsDeletingReminder(reminderId);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/reminder/${reminderId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          console.error("Authentication failed or token expired. Logging out.");
+          logout();
+          navigate("/login");
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Remove the reminder from local state
+      setReminderNotifications((prev) => {
+        const updated = prev.filter((reminder) => reminder._id !== reminderId);
+        // Update unread count
+        const unreadReminders = updated.filter((n) => !n.isRead);
+        setUnreadCount(unreadReminders.length);
+        return updated;
+      });
+    } catch (error) {
+      console.error("Error deleting reminder:", error);
+      // You might want to show an error message to the user here
+    } finally {
+      setIsDeletingReminder(null);
+    }
+  };
+
+  // Push notification subscription function
+  const subscribeUser = async () => {
+    setIsSubscribing(true);
+    setPushMessage("");
+
+    try {
+      // Check for Service Worker and Push API support
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        setPushMessage("Push notifications are not supported by your browser.");
+        setIsSubscribing(false);
+        return;
+      }
+
+      // Check if Notification API is available
+      if (!("Notification" in window)) {
+        setPushMessage("This browser does not support notifications.");
+        setIsSubscribing(false);
+        return;
+      }
+
+      // Register Service Worker
+      console.log("Registering service worker...");
+      const registration = await navigator.serviceWorker.register("/service-worker.js");
+      console.log("Service Worker registered:", registration);
+
+      // Request Notification Permission - Handle both callback and promise styles
+      let currentPermission;
+      if (typeof Notification.requestPermission === "function") {
+        try {
+          // Modern promise-based approach
+          currentPermission = await Notification.requestPermission();
+        } catch (error) {
+          // Fallback to callback approach for older browsers
+          currentPermission = await new Promise((resolve) => {
+            Notification.requestPermission((permission) => {
+              resolve(permission);
+            });
+          });
+        }
+      } else {
+        setPushMessage("Notification permission request is not supported.");
+        setIsSubscribing(false);
+        return;
+      }
+
+      setPushPermission(currentPermission);
+
+      if (currentPermission !== "granted") {
+        setPushMessage("Notification permission denied. Cannot subscribe.");
+        setIsSubscribing(false);
+        return;
+      }
+
+      // Subscribe to Push Notifications
+      console.log("Subscribing to push notifications...");
+      const subscribeOptions = {
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      };
+      const pushSubscription = await registration.pushManager.subscribe(subscribeOptions);
+      console.log("Push Subscription:", pushSubscription);
+
+      // Send Subscription to Backend
+      console.log("Sending subscription to backend...");
+      if (!token) {
+        setPushMessage("Authentication token not found. Please log in.");
+        setIsSubscribing(false);
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/subscribe`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(pushSubscription),
+      });
+
+      if (response.ok) {
+        setPushMessage("Successfully subscribed to push notifications!");
+        setPushNotificationEnabled(true);
+      } else {
+        const errorData = await response.json();
+        setPushMessage(`Failed to send subscription to backend: ${errorData.message || response.statusText}`);
+        console.error("Backend subscription error:", errorData);
+      }
+    } catch (error) {
+      console.error("Push notification setup failed:", error);
+      setPushMessage(`Error during setup: ${error.message}`);
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
+  // Handle push notification toggle
+  const handlePushNotificationToggle = async () => {
+    if (!pushNotificationEnabled) {
+      await subscribeUser();
+    } else {
+      // Disable notifications (you might want to implement unsubscribe logic here)
+      setPushNotificationEnabled(false);
+      setPushMessage("Push notifications disabled.");
+    }
+  };
+
+  // Handle notification item click
+  const handleNotificationClick = async (notification) => {
+    // You can add navigation logic here if needed
+    console.log("Notification clicked:", notification);
+  };
+
+  // Mark notification as read (for compatibility - not used with API approach)
+  const markAsRead = async (notificationId) => {
+    // Since we're using the API approach, we don't need this function
+    // but keeping it for compatibility
+    console.log("Mark as read not implemented for API-based reminders");
+  };
+
+  // Handle mark all as read (for compatibility - not used with API approach)
+  const handleMarkAllAsRead = async () => {
+    // Since we're using the API approach, we don't need this function
+    // but keeping it for compatibility
+    console.log("Mark all as read not implemented for API-based reminders");
+  };
+
+  // Calculate total notification count
+  const totalNotificationCount = taskNotificationCount + reminderNotifications.length;
+
+  // Effect to fetch tasks and reminders when the component mounts or user/token changes
   useEffect(() => {
     fetchTasks();
-    const intervalId = setInterval(fetchTasks, 5 * 60 * 1000); // 5 minutes
+    fetchReminderNotifications();
+    const intervalId = setInterval(() => {
+      fetchTasks();
+      fetchReminderNotifications();
+    }, 5 * 60 * 1000); // 5 minutes
     return () => clearInterval(intervalId);
   }, [user, token]);
 
@@ -175,6 +431,27 @@ function App() {
 
   const toggleSidebarCollapse = () => {
     setIsSidebarCollapsed((prev) => !prev);
+  };
+
+  // Format time for display
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes}m ago`;
+    } else if (diffInMinutes < 1440) {
+      return `${Math.floor(diffInMinutes / 60)}h ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  // Function to add notification when new reminder is created (called from Notification component)
+  const addNotificationToList = (notification) => {
+    // Refresh the reminders list when a new notification is triggered
+    fetchReminderNotifications();
   };
 
   // Sidebar component for logged-in users
@@ -265,6 +542,71 @@ function App() {
               </Link>
             </div>
           </div>
+
+          {/* Push Notifications Section */}
+          <div className="mb-6 border-t pt-4" style={{ borderColor: "rgba(82, 121, 111, 0.1)" }}>
+            {!isSidebarCollapsed && (
+              <h4 className="px-3 text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "#6b7280" }}>
+                Notifications
+              </h4>
+            )}
+            <div className="px-3">
+              {/* Push Notification Toggle */}
+              <div className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "justify-between"} py-2`}>
+                {!isSidebarCollapsed && (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg">🔔</span>
+                    <span className="text-sm font-medium" style={{ color: "#52796f" }}>
+                      Push Alerts
+                    </span>
+                  </div>
+                )}
+
+                <button
+                  onClick={handlePushNotificationToggle}
+                  disabled={isSubscribing}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${pushNotificationEnabled ? "bg-green-500" : "bg-gray-300"} ${isSubscribing ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                  title={isSidebarCollapsed ? (pushNotificationEnabled ? "Disable Push Notifications" : "Enable Push Notifications") : ""}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${pushNotificationEnabled ? "translate-x-6" : "translate-x-1"}`} />
+                </button>
+              </div>
+
+              {/* Status Message */}
+              {!isSidebarCollapsed && pushMessage && (
+                <div
+                  className="mt-2 p-2 rounded-md text-xs"
+                  style={{
+                    backgroundColor: pushMessage.includes("Error") || pushMessage.includes("Failed") ? "rgba(239, 68, 68, 0.1)" : "rgba(34, 197, 94, 0.1)",
+                    color: pushMessage.includes("Error") || pushMessage.includes("Failed") ? "#dc2626" : "#16a34a",
+                  }}
+                >
+                  {pushMessage}
+                </div>
+              )}
+
+              {/* Permission Status */}
+              {!isSidebarCollapsed && (
+                <div className="mt-2 text-xs" style={{ color: "#6b7280" }}>
+                  Status:{" "}
+                  <span
+                    style={{
+                      color: pushPermission === "granted" ? "#16a34a" : pushPermission === "denied" ? "#dc2626" : "#d97706",
+                    }}
+                  >
+                    {pushPermission === "granted" ? "Enabled" : pushPermission === "denied" ? "Blocked" : "Not Set"}
+                  </span>
+                </div>
+              )}
+
+              {/* Help Text */}
+              {!isSidebarCollapsed && pushPermission === "denied" && (
+                <div className="mt-2 p-2 rounded-md text-xs" style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", color: "#dc2626" }}>
+                  Please enable notifications in your browser settings to receive reminders.
+                </div>
+              )}
+            </div>
+          </div>
         </nav>
       </div>
     </>
@@ -272,7 +614,8 @@ function App() {
 
   return (
     <div className="min-h-screen font-sans relative" style={{ background: "linear-gradient(to bottom right, #fefcf7, #f8f6f0)" }}>
-      <Notification />
+      <Notification onNotificationShow={addNotificationToList} />
+
       {/* Background Elements */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse" style={{ background: "radial-gradient(circle, rgba(132, 169, 140, 0.08) 0%, transparent 70%)" }} />
@@ -328,36 +671,106 @@ function App() {
                       <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                       </svg>
-                      {notificationCount > 0 && (
+                      {totalNotificationCount > 0 && (
                         <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white rounded-full animate-pulse" style={{ backgroundColor: "#ef4444" }}>
-                          {notificationCount}
+                          {totalNotificationCount}
                         </span>
                       )}
                     </button>
 
                     {/* Notifications Dropdown */}
                     {showNotifications && (
-                      <div className="absolute right-0 mt-2 w-80 rounded-lg shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-50" style={{ backgroundColor: "#fefcf7", borderColor: "rgba(82, 121, 111, 0.2)" }}>
-                        <div className="px-4 py-2 text-xs font-semibold border-b" style={{ color: "#6b7280", borderColor: "rgba(82, 121, 111, 0.1)" }}>
-                          Urgent & High Priority Tasks
+                      <div className="absolute right-0 mt-2 w-80 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50" style={{ backgroundColor: "#fefcf7", borderColor: "rgba(82, 121, 111, 0.2)" }}>
+                        {/* Tabs */}
+                        <div className="flex border-b" style={{ borderColor: "rgba(82, 121, 111, 0.1)" }}>
+                          <button onClick={() => setActiveTab("tasks")} className={`flex-1 px-4 py-2 text-xs font-semibold transition-colors duration-200 ${activeTab === "tasks" ? "border-b-2 border-green-500 text-green-600" : "text-gray-500 hover:text-gray-700"}`}>
+                            Tasks ({taskNotificationCount})
+                          </button>
+                          <button onClick={() => setActiveTab("reminders")} className={`flex-1 px-4 py-2 text-xs font-semibold transition-colors duration-200 ${activeTab === "reminders" ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-500 hover:text-gray-700"}`}>
+                            Reminders ({reminderNotifications.length})
+                          </button>
                         </div>
+
                         <div className="max-h-96 overflow-y-auto">
-                          {urgentHighTasks.length > 0 ? (
-                            urgentHighTasks.map((task) => (
-                              <div key={task._id} className="px-4 py-3 hover:bg-gray-50 border-b last:border-b-0" style={{ borderColor: "rgba(82, 121, 111, 0.1)" }}>
-                                <div className="font-medium text-sm" style={{ color: "#2d5016" }}>
-                                  {task.title}
+                          {activeTab === "tasks" ? (
+                            // Tasks Tab Content
+                            urgentHighTasks.length > 0 ? (
+                              urgentHighTasks.map((task) => (
+                                <div key={task._id} className="px-4 py-3 hover:bg-gray-50 border-b last:border-b-0" style={{ borderColor: "rgba(82, 121, 111, 0.1)" }}>
+                                  <div className="font-medium text-sm" style={{ color: "#2d5016" }}>
+                                    {task.title}
+                                  </div>
+                                  <div className="text-xs mt-1" style={{ color: "#6b7280" }}>
+                                    Due: {new Date(task.dueDate).toLocaleDateString()}
+                                  </div>
+                                  <div className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${task.priority === "Urgent" ? "bg-red-100 text-red-800" : "bg-orange-100 text-orange-800"}`}>{task.priority}</div>
                                 </div>
-                                <div className="text-xs mt-1" style={{ color: "#6b7280" }}>
-                                  Due: {new Date(task.dueDate).toLocaleDateString()}
-                                </div>
-                                <div className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${task.priority === "Urgent" ? "bg-red-100 text-red-800" : "bg-orange-100 text-orange-800"}`}>{task.priority}</div>
+                              ))
+                            ) : (
+                              <div className="px-4 py-3 text-sm" style={{ color: "#6b7280" }}>
+                                No urgent tasks! 🎉
                               </div>
-                            ))
+                            )
                           ) : (
-                            <div className="px-4 py-3 text-sm" style={{ color: "#6b7280" }}>
-                              No urgent tasks! 🎉
-                            </div>
+                            // Reminders Tab Content
+                            <>
+                              {reminderNotifications.length > 0 ? (
+                                reminderNotifications.map((notification) => (
+                                  <div key={notification._id} onClick={() => handleNotificationClick(notification)} className={`px-4 py-3 hover:bg-gray-50 border-b last:border-b-0 cursor-pointer ${!notification.isRead ? "bg-blue-50" : ""}`} style={{ borderColor: "rgba(82, 121, 111, 0.1)" }}>
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <div className="font-medium text-sm" style={{ color: "#2d5016" }}>
+                                          {notification.title}
+                                        </div>
+                                        {notification.description && (
+                                          <div className="text-xs mt-1" style={{ color: "#6b7280" }}>
+                                            {notification.description}
+                                          </div>
+                                        )}
+                                        <div className="text-xs mt-1" style={{ color: "#6b7280" }}>
+                                          Reminder: {new Date(notification.dueTime).toLocaleString()}
+                                        </div>
+                                        <div className="flex items-center mt-2 space-x-2">
+                                          <span className={`inline-block px-2 py-1 text-xs rounded-full ${notification.type === "study" ? "bg-blue-100 text-blue-800" : notification.type === "task" ? "bg-green-100 text-green-800" : notification.type === "event" ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"}`}>{notification.type}</span>
+                                          <span className="text-xs" style={{ color: "#6b7280" }}>
+                                            {formatTime(notification.createdAt)}
+                                          </span>
+                                          {!notification.isRead && <span className="inline-block px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">New</span>}
+                                        </div>
+                                      </div>
+
+                                      {/* Delete Button */}
+                                      <div className="flex items-center space-x-2 ml-2">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteReminder(notification._id);
+                                          }}
+                                          disabled={isDeletingReminder === notification._id}
+                                          className="p-1 rounded-full hover:bg-red-100 transition-colors duration-200 text-red-600 hover:text-red-800"
+                                          title="Delete reminder"
+                                        >
+                                          {isDeletingReminder === notification._id ? (
+                                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                          ) : (
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                          )}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="px-4 py-3 text-sm" style={{ color: "#6b7280" }}>
+                                  No reminder notifications yet! ⏰
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>

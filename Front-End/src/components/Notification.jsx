@@ -1,8 +1,24 @@
 import { useNotification } from "../context/NotificationContext";
 import { CheckCircle, XCircle, AlertCircle, X } from "lucide-react";
+import { useEffect } from "react";
 
-function Notification() {
+function Notification({ onNotificationShow }) {
   const { notification, showNotification } = useNotification();
+
+  // When a notification appears, save it to the dropdown list
+  useEffect(() => {
+    if (notification && onNotificationShow) {
+      // Only save reminder-type notifications to the dropdown
+      if (notification.type === "reminder" || notification.isReminder) {
+        onNotificationShow({
+          title: notification.message,
+          type: notification.reminderType || "reminder",
+          dueTime: notification.dueTime || new Date().toISOString(),
+          originalNotification: notification,
+        });
+      }
+    }
+  }, [notification, onNotificationShow]);
 
   if (!notification) {
     return null;

@@ -18,9 +18,22 @@ const studySchema = new Schema(
     endDate: {
       type: Date,
       required: true,
+      validate: {
+        validator: function (value) {
+          return value > this.startDate;
+        },
+        message: "End date must be after start date",
+      },
     },
     daysOfWeek: {
       type: [String],
+      validate: {
+        validator: function (days) {
+          const validDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+          return days.every((day) => validDays.includes(day));
+        },
+        message: "Invalid day of week",
+      },
     },
     tasks: [
       {
