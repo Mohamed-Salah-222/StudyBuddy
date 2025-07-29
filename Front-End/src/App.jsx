@@ -32,7 +32,7 @@ function App() {
   const features = [
     {
       title: "Smart Todo List",
-      description: "Organize your tasks with intelligent prioritization and deadline tracking.",
+      description: "Organize your tasks with intelligent prioritization and deadline tracking",
       icon: "📝",
       link: "/todo",
       gradient: "linear-gradient(135deg, #52796f 0%, #84a98c 100%)",
