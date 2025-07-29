@@ -15,7 +15,9 @@ const Task = require("./models/task");
 const authMiddleware = require("./Middleware/authMiddleware");
 const { sendVerificationEmail, sendPasswordResetEmail } = require("./services/emailServices");
 const passport = require("passport");
-const Resources = require("./models/Resources");
+const Resources = require("./models/resources");
+const StudyPlan = require("./models/studyPlan");
+const Reminder = require("./models/reminder");
 
 //*--App + Port + dbURI
 const app = express();
@@ -276,7 +278,94 @@ app.post("/api/resources", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Server error while creating a Resource" });
   }
 });
+//*--------------------------------------------------------------------------Add a Study Plan-----------------------------------------------------------------------------
+app.post("/api/studyplan", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { title, description, startDate, endDate, daysOfWeek } = req.body;
+    const validationErrors = [];
 
+    if (!title) {
+      validationErrors.push("Title is required.");
+    }
+    if (!startDate) {
+      validationErrors.push("Start Date is required.");
+    }
+    if (!endDate) {
+      validationErrors.push("End Date is required.");
+    }
+
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      validationErrors.push("Start date cannot be after end date.");
+    }
+
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: validationErrors,
+      });
+    }
+
+    const newStudyPlan = new StudyPlan({
+      title,
+      description,
+      startDate,
+      endDate,
+      daysOfWeek,
+      user: userId,
+    });
+
+    const savedPlan = await newStudyPlan.save();
+    res.status(201).json(savedPlan);
+  } catch (error) {
+    console.error("Server error while creating a StudyPlan:", error);
+
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({ message: "Validation failed", errors: messages });
+    }
+
+    res.status(500).json({ message: "Server error while creating a StudyPlan", error: error.message });
+  }
+});
+//*--------------------------------------------------------------------------Add a Reminder-------------------------------------------------------------------------------
+app.post("/api/reminder", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { title, dueDateTime, type, notifed } = req.body;
+    const validationErrors = [];
+    if (!title) {
+      validationErrors.push("title is required");
+    }
+    if (!dueDateTime) {
+      validationErrors.push("dueDateTime is required");
+    }
+    if (!type) {
+      validationErrors.push("type is required");
+    }
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ message: "Validation error", errors: validationErrors });
+    }
+    const newReminder = new Reminder({
+      title,
+      dueDateTime,
+      type,
+      user: userId,
+      notifed,
+    });
+    const savedReminder = await newReminder.save();
+    res.status(201).json(savedReminder);
+  } catch (error) {
+    console.error("Server error while creating a Reminder:", error);
+
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({ message: "Validation failed", errors: messages });
+    }
+
+    res.status(500).json({ message: "Server error while creating a Reminder", error: error.message });
+  }
+});
 //^----------------------------------------------------------------------------GET REQUESTS-------------------------------------------------------------------------------
 //*------------------------------------------------------------------------------get tasks--------------------------------------------------------------------------------
 app.get("/api/tasks", authMiddleware, async (req, res) => {
@@ -291,7 +380,7 @@ app.get("/api/tasks", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Server error while fetching tasks." });
   }
 });
-//*---------------------------------------------------------------------------get Resources------------------------------------------------------------------------------
+//*---------------------------------------------------------------------------Get Resources------------------------------------------------------------------------------
 app.get("/api/resources", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -302,6 +391,28 @@ app.get("/api/resources", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Error fetching resources:", error);
     res.status(500).json({ message: "Server error while fetching resources." });
+  }
+});
+//*--------------------------------------------------------------------------Get a Study Plan-----------------------------------------------------------------------------
+app.get("/api/studyplan", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const studyPlans = await StudyPlan.find({ user: userId }).sort({ createdAt: -1 });
+    res.status(200).json(studyPlans);
+  } catch (error) {
+    console.log("Error Fetching study plans", error);
+    res.status(500).json({ message: "Server error while fetching studyplans" });
+  }
+});
+//*--------------------------------------------------------------------------Get a reminder------------------------------------------------------------------------------
+app.get("/api/reminder", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const reminder = await Reminder.find({ user: userId }).sort({ createdAt: -1 });
+    res.status(200).json(reminder);
+  } catch (error) {
+    console.log("Error Fetching reminder", error);
+    res.status(500).json({ message: "Server error while fetching reminder" });
   }
 });
 //^---------------------------------------------------------------------------Patch REQUESTS-----------------------------------------------------------------------------
@@ -347,6 +458,81 @@ app.patch("/api/tasks/:id", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Server error while updating task." });
   }
 });
+//*------------------------------------------------------------------------Update a Study Plan---------------------------------------------------------------------------
+app.patch("/api/studyplan/:id", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const planId = req.params.id;
+    const { title, description, startDate, endDate, daysOfWeek } = req.body;
+
+    const planToUpdate = await StudyPlan.findById(planId);
+    if (!planToUpdate) {
+      return res.status(404).json({ message: "Error plan not found" });
+    }
+
+    if (userId !== planToUpdate.user.toString()) {
+      return res.status(403).json({ message: "Forbidden: You are not authorized to update this task." });
+    }
+
+    const updateFields = {};
+    if (title !== undefined) updateFields.title = title;
+    if (description !== undefined) updateFields.description = description;
+    if (startDate !== undefined) updateFields.startDate = startDate;
+    if (endDate !== undefined) updateFields.endDate = endDate;
+    if (daysOfWeek !== undefined) updateFields.daysOfWeek = daysOfWeek;
+
+    const updatedPlan = await StudyPlan.findByIdAndUpdate(planId, updateFields, { new: true, runValidators: true });
+    if (!updatedPlan) {
+      return res.status(404).json({ message: "Plan not found after update attempt." });
+    }
+
+    res.status(200).json(updatedPlan);
+  } catch (error) {
+    console.error("Error Updating plan:", error);
+
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({ message: "Validation failed", errors: messages });
+    }
+
+    res.status(500).json({ message: "Server error while updating plan." });
+  }
+});
+//*-------------------------------------------------------------------------Update a reminder----------------------------------------------------------------------------
+app.patch("/api/reminder/:id", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const reminderId = req.params.id;
+    const { title, type, dueDateTime } = req.body;
+
+    const reminderToUpdate = await Reminder.findById(reminderId);
+    if (!reminderToUpdate) {
+      return res.status(404).json({ message: "Reminder not found" });
+    }
+    if (userId !== reminderToUpdate.user.toString()) {
+      return res.status(403).json({ message: "Forbidden: You are not authorized to update this task." });
+    }
+    const updateFields = {};
+    if (title !== undefined) updateFields.title = title;
+    if (dueDateTime !== undefined) updateFields.dueDateTime = dueDateTime;
+    if (type !== undefined) updateFields.type = type;
+
+    const updatedReminder = await Reminder.findByIdAndUpdate(reminderId, updateFields, { new: true, runValidators: true });
+    if (!updatedReminder) {
+      return res.status(404).json({ message: "Reminder not found after update attempt." });
+    }
+    res.status(200).json(updatedReminder);
+  } catch (error) {
+    console.error("Error Updating Reminder:", error);
+
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({ message: "Validation failed", errors: messages });
+    }
+
+    res.status(500).json({ message: "Server error while updating Reminder." });
+  }
+});
 //^--------------------------------------------------------------------------Delete REQUESTS-----------------------------------------------------------------------------
 //*---------------------------------------------------------------------------Delete a task------------------------------------------------------------------------------
 app.delete("/api/tasks/:id", authMiddleware, async (req, res) => {
@@ -390,6 +576,48 @@ app.delete("/api/resources/:id", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Error deleting Resource:", error);
     res.status(500).json({ message: "Server error while deleting Resource." });
+  }
+});
+//*------------------------------------------------------------------------Delete a Study Plan---------------------------------------------------------------------------
+app.delete("/api/studyplan/:id", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const planId = req.params.id;
+
+    const planToDelete = await StudyPlan.findById(planId);
+    if (!planToDelete) {
+      return res.status(404).json({ message: "Plan not found" });
+    }
+
+    if (userId !== planToDelete.user.toString()) {
+      return res.status(403).json({ message: "Forbidden: You are not authorized to delete this Plan." });
+    }
+    const deletedPlan = await StudyPlan.findByIdAndDelete(planId);
+    res.status(200).json({ message: "Plan deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting PLan:", error);
+    res.status(500).json({ message: "Server error while deleting PLan." });
+  }
+});
+//*---------------------------------------------------------------------------Delete a reminder--------------------------------------------------------------------------
+app.delete("/api/reminder/:id", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const reminderId = req.params.id;
+
+    const reminderToDelete = await Reminder.findById(reminderId);
+    if (!reminderToDelete) {
+      return res.status(404).json({ message: "Error reminder not found" });
+    }
+    if (userId !== reminderToDelete.user.toString()) {
+      return res.status(403).json({ message: "Forbidden: You are not authorized to delete this Plan." });
+    }
+    const deletedReminder = await Reminder.findByIdAndDelete(reminderId);
+
+    res.status(200).json({ message: "Reminder deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting Reminder:", error);
+    res.status(500).json({ message: "Server error while deleting Reminder." });
   }
 });
 //*---------------------------------------------------------------------------------Google-------------------------------------------------------------------------------
