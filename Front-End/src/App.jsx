@@ -12,6 +12,9 @@ import VerifyPage from "./components/VerifyPage";
 import TasksPage from "./components/TasksPage";
 import StudyResourceCollector from "./components/StudyResourceCollector";
 import Notification from "./components/Notification";
+import ReminderPage from "./components/ReminderPage";
+import DiscussionForum from "./components/DiscussionForum";
+import DiscussionDetails from "./components/DiscussionDetails";
 
 // Utility function for VAPID key conversion
 function urlBase64ToUint8Array(base64String) {
@@ -74,10 +77,10 @@ function App() {
       gradient: "linear-gradient(135deg, #84a98c 0%, #d4a574 100%)",
     },
     {
-      title: "Smart Learning Assistant",
-      description: "Ask AI questions about topics you don't understand and get instant explanations.",
-      icon: "🧠",
-      link: "/smart-learning",
+      title: "Reminder Section",
+      description: "Never forget an important date or a deadline ever again.",
+      icon: "⏲️",
+      link: "/reminder",
       gradient: "linear-gradient(135deg, #d4a574 0%, #52796f 100%)",
     },
     {
@@ -544,69 +547,6 @@ function App() {
           </div>
 
           {/* Push Notifications Section */}
-          <div className="mb-6 border-t pt-4" style={{ borderColor: "rgba(82, 121, 111, 0.1)" }}>
-            {!isSidebarCollapsed && (
-              <h4 className="px-3 text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "#6b7280" }}>
-                Notifications
-              </h4>
-            )}
-            <div className="px-3">
-              {/* Push Notification Toggle */}
-              <div className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "justify-between"} py-2`}>
-                {!isSidebarCollapsed && (
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg">🔔</span>
-                    <span className="text-sm font-medium" style={{ color: "#52796f" }}>
-                      Push Alerts
-                    </span>
-                  </div>
-                )}
-
-                <button
-                  onClick={handlePushNotificationToggle}
-                  disabled={isSubscribing}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${pushNotificationEnabled ? "bg-green-500" : "bg-gray-300"} ${isSubscribing ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                  title={isSidebarCollapsed ? (pushNotificationEnabled ? "Disable Push Notifications" : "Enable Push Notifications") : ""}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${pushNotificationEnabled ? "translate-x-6" : "translate-x-1"}`} />
-                </button>
-              </div>
-
-              {/* Status Message */}
-              {!isSidebarCollapsed && pushMessage && (
-                <div
-                  className="mt-2 p-2 rounded-md text-xs"
-                  style={{
-                    backgroundColor: pushMessage.includes("Error") || pushMessage.includes("Failed") ? "rgba(239, 68, 68, 0.1)" : "rgba(34, 197, 94, 0.1)",
-                    color: pushMessage.includes("Error") || pushMessage.includes("Failed") ? "#dc2626" : "#16a34a",
-                  }}
-                >
-                  {pushMessage}
-                </div>
-              )}
-
-              {/* Permission Status */}
-              {!isSidebarCollapsed && (
-                <div className="mt-2 text-xs" style={{ color: "#6b7280" }}>
-                  Status:{" "}
-                  <span
-                    style={{
-                      color: pushPermission === "granted" ? "#16a34a" : pushPermission === "denied" ? "#dc2626" : "#d97706",
-                    }}
-                  >
-                    {pushPermission === "granted" ? "Enabled" : pushPermission === "denied" ? "Blocked" : "Not Set"}
-                  </span>
-                </div>
-              )}
-
-              {/* Help Text */}
-              {!isSidebarCollapsed && pushPermission === "denied" && (
-                <div className="mt-2 p-2 rounded-md text-xs" style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", color: "#dc2626" }}>
-                  Please enable notifications in your browser settings to receive reminders.
-                </div>
-              )}
-            </div>
-          </div>
         </nav>
       </div>
     </>
@@ -842,6 +782,9 @@ function App() {
               <Route path="/auth/google/callback" element={<GoogleAuthCallbackPage />} />
               <Route path="/todo" element={<TasksPage />} />
               <Route path="/resources" element={<StudyResourceCollector />} />
+              <Route path="/reminder" element={<ReminderPage />} />
+              <Route path="/forum" element={<DiscussionForum />} />
+              <Route path="/discussion/:id" element={<DiscussionDetails />} />
 
               {/* Placeholder Routes */}
               <Route

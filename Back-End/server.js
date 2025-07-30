@@ -21,6 +21,8 @@ const Resources = require("./models/resources");
 const StudyPlan = require("./models/studyPlan");
 const Reminder = require("./models/reminder");
 const JobManager = require("./jobs/jobManager"); // Adjust path as needed
+const Discussion = require("./models/discussion");
+const Comment = require("./models/comment");
 
 //*--App + Port + dbURI
 const app = express();
@@ -395,6 +397,93 @@ app.post("/api/reminder", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Server error while creating a Reminder", error: error.message });
   }
 });
+//*----------------------------------------------------------------------------Add a Discussion-------------------------------------------------------------------------------
+app.post("/api/discussion", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { title, context, tags } = req.body;
+    const validationError = [];
+    if (!title) {
+      validationError.push("Title is Required");
+    }
+    if (!context) {
+      validationError.push("context is Required");
+    }
+    if (!tags) {
+      validationError.push("tags are Required");
+    }
+    if (validationError.length > 0) {
+      return res.status(400).json({ message: "Validation Error", error: validationError });
+    }
+
+    const discussion = new Discussion({
+      title,
+      context,
+      tags,
+      startedBy: userId,
+    });
+
+    const savedDiscussion = await discussion.save();
+    res.status(201).json(savedDiscussion);
+  } catch (error) {
+    console.error("Server error while creating a Discussion:", error);
+
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({ message: "Validation failed", errors: messages });
+    }
+
+    res.status(500).json({ message: "Server error while creating a Discussion", error: error.message });
+  }
+});
+//*----------------------------------------------------------------------------Add a Comment----------------------------------------------------------------------------------
+app.post("/api/discussions/:discussionId/comments", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const discussionId = req.params.discussionId;
+    const { content } = req.body;
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(discussionId)) {
+      return res.status(400).json({ message: "Invalid discussion ID format." });
+    }
+
+    if (!content || typeof content !== "string" || content.trim() === "") {
+      return res.status(400).json({ message: "Comment content cannot be empty." });
+    }
+
+    const discussion = await Discussion.findById(discussionId);
+    if (!discussion) {
+      return res.status(404).json({ message: "Discussion not found." });
+    }
+
+    const newComment = new Comment({
+      content: content.trim(),
+      postedBy: userId,
+      forumPost: discussionId,
+    });
+
+    const savedComment = await newComment.save();
+
+    // Add comment reference to discussion
+    discussion.comments.push(savedComment._id);
+    await discussion.save();
+
+    // Return populated comment to match GET response structure
+    const populatedComment = await Comment.findById(savedComment._id).populate("postedBy", "username");
+
+    res.status(201).json(populatedComment);
+  } catch (error) {
+    console.error("Server error while creating a Comment:", error);
+
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({ message: "Validation failed", errors: messages });
+    }
+
+    res.status(500).json({ message: "Server error while creating a Comment.", error: error.message });
+  }
+});
 //*-------------------------------------------------------------------------Save Push Subscription API------------------------------------------------------------------------
 app.post("/api/subscribe", authMiddleware, async (req, res) => {
   const userId = req.user.userId;
@@ -492,6 +581,52 @@ app.get("/api/reminder/jobs/stats", authMiddleware, async (req, res) => {
       message: "Error getting job statistics",
       error: error.message,
     });
+  }
+});
+//*--------------------------------------------------------------------------Get Discussions-----------------------------------------------------------------------------
+app.get("/api/discussion", authMiddleware, async (req, res) => {
+  try {
+    const discussion = await Discussion.find({}).populate("startedBy", "username");
+    res.status(200).json(discussion);
+  } catch (error) {
+    console.log("Server error while fetching discussions");
+    res.status(500).json({ message: "Server error while fetching discussions" });
+  }
+});
+//*---------------------------------------------------------------------Get a specific discussion------------------------------------------------------------------------
+app.get("/api/discussion/:id", authMiddleware, async (req, res) => {
+  try {
+    const discussionId = req.params.id;
+    const discussion = await Discussion.findById(discussionId);
+    res.status(200).json(discussion);
+  } catch (error) {
+    console.log("Server error while fetching discussion");
+    res.status(500).json({ message: "Server error while fetching discussion" });
+  }
+});
+//*---------------------------------------------------------------------------get comments-------------------------------------------------------------------------------
+app.get("/api/discussions/:discussionId/comments", authMiddleware, async (req, res) => {
+  try {
+    const discussionId = req.params.discussionId;
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(discussionId)) {
+      return res.status(400).json({ message: "Invalid discussion ID format." });
+    }
+
+    // First check if discussion exists
+    const discussion = await Discussion.findById(discussionId);
+    if (!discussion) {
+      return res.status(404).json({ message: "Discussion not found." });
+    }
+
+    // Query comments directly - this is more reliable
+    const comments = await Comment.find({ forumPost: discussionId }).populate("postedBy", "username").sort({ createdAt: 1 }); // Sort by creation date
+
+    res.status(200).json(comments);
+  } catch (error) {
+    console.error("Server error while fetching comments for discussion:", error);
+    res.status(500).json({ message: "Server error while fetching comments.", error: error.message });
   }
 });
 //^---------------------------------------------------------------------------Patch REQUESTS-----------------------------------------------------------------------------
@@ -634,6 +769,80 @@ app.patch("/api/reminder/:id", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Server error while updating Reminder." });
   }
 });
+//*---------------------------------------------------------------------Update a discussion status-----------------------------------------------------------------------
+app.patch("/api/discussion/:id/toggle-status", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const discussionId = req.params.id;
+    const discussion = await Discussion.findById(discussionId);
+
+    if (!discussion) {
+      return res.status(404).json({ message: "Discussion not found." });
+    }
+
+    if (discussion.startedBy.toString() !== userId) {
+      return res.status(403).json({ message: "Unauthorized: You are not the creator of this discussion." });
+    }
+    if (discussion.status === "Open") {
+      discussion.status = "Closed";
+    } else if (discussion.status === "Closed") {
+      discussion.status = "Open";
+    } else {
+      return res.status(400).json({ message: "Invalid discussion status for toggling." });
+    }
+
+    const updatedDiscussion = await discussion.save();
+    res.status(200).json(updatedDiscussion);
+  } catch (error) {
+    console.error("Server error while updating the status:", error);
+    res.status(500).json({ message: "Server error while updating the status." });
+  }
+});
+//*--------------------------------------------------------------------------Update a comment-----------------------------------------------------------------------------
+app.patch("/api/comments/:commentId", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const commentId = req.params.commentId;
+    const { content } = req.body;
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+      return res.status(400).json({ message: "Invalid comment ID format." });
+    }
+
+    if (!content || typeof content !== "string" || content.trim() === "") {
+      return res.status(400).json({ message: "Comment content cannot be empty." });
+    }
+
+    const commentToUpdate = await Comment.findById(commentId);
+
+    if (!commentToUpdate) {
+      return res.status(404).json({ message: "Comment not found." });
+    }
+
+    // More robust user ID comparison
+    if (commentToUpdate.postedBy.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Unauthorized: You are not the owner of this comment." });
+    }
+
+    commentToUpdate.content = content.trim();
+    const updatedComment = await commentToUpdate.save();
+
+    // Populate the response to match the structure from GET requests
+    const populatedComment = await Comment.findById(updatedComment._id).populate("postedBy", "username");
+
+    res.status(200).json(populatedComment);
+  } catch (error) {
+    console.error("Server error while updating comment:", error);
+
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({ message: "Validation failed", errors: messages });
+    }
+
+    res.status(500).json({ message: "Server error while updating comment.", error: error.message });
+  }
+});
 //^--------------------------------------------------------------------------Delete REQUESTS-----------------------------------------------------------------------------
 //*---------------------------------------------------------------------------Delete a task------------------------------------------------------------------------------
 app.delete("/api/tasks/:id", authMiddleware, async (req, res) => {
@@ -730,6 +939,72 @@ app.delete("/api/reminder/:id", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Error deleting Reminder:", error);
     res.status(500).json({ message: "Server error while deleting Reminder." });
+  }
+});
+//*--------------------------------------------------------------------------Delete a discussion-------------------------------------------------------------------------
+app.delete("/api/discussion/:id", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const discussionId = req.params.id;
+    const discussionToDelete = await Discussion.findById(discussionId);
+
+    if (!discussionToDelete) {
+      return res.status(404).json({ message: "Discussion not found." });
+    }
+    if (discussionToDelete.startedBy.toString() !== userId) {
+      return res.status(403).json({ message: "Unauthorized: You are not the creator of this discussion." });
+    }
+
+    await Discussion.findByIdAndDelete(discussionId);
+
+    res.status(204).send();
+  } catch (error) {
+    console.error("Server error while deleting discussion:", error);
+    res.status(500).json({ message: "Server error while deleting discussion." });
+  }
+});
+//*---------------------------------------------------------------------------Delete a comment---------------------------------------------------------------------------
+app.delete("/api/comments/:commentId", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const commentId = req.params.commentId;
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+      return res.status(400).json({ message: "Invalid comment ID format." });
+    }
+
+    const commentToDelete = await Comment.findById(commentId);
+    if (!commentToDelete) {
+      return res.status(404).json({ message: "Comment not found." });
+    }
+
+    // Get discussion (this should exist if comment exists)
+    const discussion = await Discussion.findById(commentToDelete.forumPost);
+    if (!discussion) {
+      // This is actually an error - comment references non-existent discussion
+      return res.status(404).json({ message: "Associated discussion not found." });
+    }
+
+    // Check permissions
+    const isCommentOwner = commentToDelete.postedBy.toString() === userId.toString();
+    const isDiscussionCreator = discussion.startedBy.toString() === userId.toString();
+
+    if (!isCommentOwner && !isDiscussionCreator) {
+      return res.status(403).json({ message: "Unauthorized: You do not have permission to delete this comment." });
+    }
+
+    // Delete the comment
+    await Comment.findByIdAndDelete(commentId);
+
+    // Remove comment reference from discussion
+    discussion.comments = discussion.comments.filter((commentRef) => commentRef.toString() !== commentId.toString());
+    await discussion.save();
+
+    res.status(204).send();
+  } catch (error) {
+    console.error("Server error while deleting comment:", error);
+    res.status(500).json({ message: "Server error while deleting comment.", error: error.message });
   }
 });
 //*---------------------------------------------------------------------------------Google-------------------------------------------------------------------------------
