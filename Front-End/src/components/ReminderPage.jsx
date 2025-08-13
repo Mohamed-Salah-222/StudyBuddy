@@ -7,26 +7,45 @@ const DateTimePicker = ({ value, onChange, label, required = false }) => {
 
   useEffect(() => {
     if (value) {
+      // Parse the incoming value and format for local display
       const dateObj = new Date(value);
-      const dateStr = dateObj.toISOString().split("T")[0];
-      const timeStr = dateObj.toTimeString().slice(0, 5);
+
+      // Format for date input (YYYY-MM-DD)
+      const dateStr = dateObj.getFullYear() + "-" + String(dateObj.getMonth() + 1).padStart(2, "0") + "-" + String(dateObj.getDate()).padStart(2, "0");
+
+      // Format for time input (HH:MM)
+      const timeStr = String(dateObj.getHours()).padStart(2, "0") + ":" + String(dateObj.getMinutes()).padStart(2, "0");
+
       setDate(dateStr);
       setTime(timeStr);
     }
   }, [value]);
 
+  const createDateTime = (dateValue, timeValue) => {
+    if (!dateValue || !timeValue) return null;
+
+    // Create date object in local timezone
+    const [year, month, day] = dateValue.split("-").map(Number);
+    const [hours, minutes] = timeValue.split(":").map(Number);
+
+    // Create date in local timezone (no UTC conversion)
+    const dateObj = new Date(year, month - 1, day, hours, minutes);
+
+    return dateObj.toISOString();
+  };
+
   const handleDateChange = (newDate) => {
     setDate(newDate);
-    if (newDate && time) {
-      const combined = `${newDate}T${time}:00`;
+    const combined = createDateTime(newDate, time);
+    if (combined) {
       onChange(combined);
     }
   };
 
   const handleTimeChange = (newTime) => {
     setTime(newTime);
-    if (date && newTime) {
-      const combined = `${date}T${newTime}:00`;
+    const combined = createDateTime(date, newTime);
+    if (combined) {
       onChange(combined);
     }
   };
@@ -243,7 +262,7 @@ const ReminderPage = () => {
   const startEdit = (reminder) => {
     setFormData({
       title: reminder.title,
-      reminderTime: reminder.reminderTime ? reminder.reminderTime.slice(0, 16) : "", // Format for datetime-local input
+      reminderTime: reminder.dueDateTime || reminder.reminderTime, // Handle both field names
       type: reminder.type,
     });
     setEditingId(reminder._id);
@@ -269,7 +288,7 @@ const ReminderPage = () => {
 
   const getStatusIcon = (reminder) => {
     const now = new Date();
-    const dueDate = new Date(reminder.reminderTime);
+    const dueDate = new Date(reminder.dueDateTime || reminder.reminderTime);
     const isOverdue = dueDate < now;
 
     if (reminder.notified) {
@@ -283,7 +302,7 @@ const ReminderPage = () => {
 
   const getStatusText = (reminder) => {
     const now = new Date();
-    const dueDate = new Date(reminder.reminderTime);
+    const dueDate = new Date(reminder.dueDateTime || reminder.reminderTime);
     const isOverdue = dueDate < now;
 
     if (reminder.notified) return "Completed";
@@ -449,7 +468,7 @@ const ReminderPage = () => {
                     </div>
 
                     <div className="flex items-center gap-4 text-sm" style={{ color: "#6b7280" }}>
-                      <span>Due: {formatDateTime(reminder.dueDateTime)}</span>
+                      <span>Due: {formatDateTime(reminder.dueDateTime || reminder.reminderTime)}</span>
                       <span className="font-medium">{getStatusText(reminder)}</span>
                     </div>
                   </div>
