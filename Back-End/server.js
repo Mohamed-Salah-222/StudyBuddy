@@ -13,7 +13,7 @@ const webPush = require("web-push");
 //*-- Models
 const User = require("./models/user");
 const Task = require("./models/task");
-const authMiddleware = require(require("./middleware/authMiddleware"));
+const authMiddleware = require("./middleware/authMiddleware");
 const { sendVerificationEmail, sendPasswordResetEmail } = require("./services/emailServices");
 const passport = require("passport");
 const Resources = require("./models/resources");
