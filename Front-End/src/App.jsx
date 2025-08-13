@@ -15,6 +15,7 @@ import Notification from "./components/Notification";
 import ReminderPage from "./components/ReminderPage";
 import DiscussionForum from "./components/DiscussionForum";
 import DiscussionDetails from "./components/DiscussionDetails";
+import AIStudyPage from "./components/AIStudyPage";
 
 // Utility function for VAPID key conversion
 function urlBase64ToUint8Array(base64String) {
@@ -68,6 +69,13 @@ function App() {
       icon: "📝",
       link: "/todo",
       gradient: "linear-gradient(135deg, #52796f 0%, #84a98c 100%)",
+    },
+    {
+      title: "AI Study Buddy",
+      description: "Get personalized help with studying, explanations, and learning techniques from AI",
+      icon: "🤖",
+      link: "/ai-study",
+      gradient: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
     },
     {
       title: "Resources Planner",
@@ -743,6 +751,7 @@ function App() {
               <Route path="/reminder" element={<ReminderPage />} />
               <Route path="/forum" element={<DiscussionForum />} />
               <Route path="/discussion/:id" element={<DiscussionDetails />} />
+              <Route path="/ai-study" element={<AIStudyPage />} />
             </Routes>
           </div>
         </main>

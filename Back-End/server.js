@@ -1,7 +1,6 @@
 //*--Load Env Variables
 require("dotenv").config();
 require("./config/passport-setup");
-
 //*--Importing
 const express = require("express");
 const mongoose = require("mongoose");
@@ -41,7 +40,8 @@ webPush.setVapidDetails(vapidSubject, publicVapidKey, privateVapidKey);
 app.use(cors());
 app.use(express.json());
 app.use(passport.initialize());
-
+console.log("HF API Key:", process.env.HUGGINGFACE_API_KEY ? "LOADED" : "NOT LOADED");
+console.log("First 10 characters:", process.env.HUGGINGFACE_API_KEY?.substring(0, 10));
 //*-----------------------------------------------------------------------------------APIs-----------------------------------------------------------------------------------
 //^------------------------------------------------------------------------------POST REQUESTS-------------------------------------------------------------------------------
 //*------------------------------------------------------------------------------Register API--------------------------------------------------------------------------------
@@ -1028,6 +1028,42 @@ app.get("/api/auth/google/callback", passport.authenticate("google", { session: 
 
   res.redirect(`http://localhost:5173/auth/google/callback?token=${token}`);
 });
+//*---------------------------------------------------------------------------------AI-------------------------------------------------------------------------------
+(async () => {
+  const { GoogleGenerativeAI } = await import("@google/generative-ai");
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+  // API route using Gemini
+  app.post("/api/chat-gemini", async (req, res) => {
+    console.log("🚀 CHAT ROUTE HIT!");
+    console.log("Request body:", req.body);
+
+    try {
+      const { message, conversationHistory = [] } = req.body;
+
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+      const chat = model.startChat({
+        history: conversationHistory.map((item) => ({
+          role: item.role,
+          parts: [{ text: item.text }],
+        })),
+      });
+
+      const result = await chat.sendMessage(message);
+      const aiResponse = result.response.text();
+
+      console.log("🤖 AI Response:", aiResponse);
+      res.json({ response: aiResponse });
+    } catch (error) {
+      console.error("❌ Error:", error);
+      res.status(500).json({
+        response: "Sorry, I couldn't process your request right now.",
+        details: error.message,
+      });
+    }
+  });
+})();
 //*---------------------------------------------------------------------------------Agenda-------------------------------------------------------------------------------
 
 mongoose

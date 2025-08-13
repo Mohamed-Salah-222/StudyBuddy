@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { Book, CheckSquare, Calendar, Users, ArrowRight, Play, BookOpen, Bell, MessageSquare, TrendingUp, Star, Clock, Target, Award } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { Book, CheckSquare, Calendar, Users, ArrowRight, Play, BookOpen, Bell, MessageSquare, TrendingUp, Star, Clock, Target, Award, Brain } from "lucide-react";
 
 const colorScheme = {
   "--primary-sage": "#84a98c",
@@ -194,7 +194,7 @@ const HomePage = () => {
 
   const fetchTasks = async (token) => {
     try {
-      const response = await fetch("/api/tasks", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -208,7 +208,7 @@ const HomePage = () => {
 
   const fetchDiscussions = async (token) => {
     try {
-      const response = await fetch("/api/discussion", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/discussion`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -222,7 +222,7 @@ const HomePage = () => {
 
   const fetchResources = async (token) => {
     try {
-      const response = await fetch("/api/resources", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resources`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -236,7 +236,7 @@ const HomePage = () => {
 
   const fetchReminders = async (token) => {
     try {
-      const response = await fetch("/api/reminder", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/reminder`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -267,6 +267,12 @@ const HomePage = () => {
       title: "Smart Todo Lists",
       description: "Organize your tasks with intelligent prioritization, due date tracking, and progress monitoring. Never miss an important deadline again.",
       gradient: "linear-gradient(135deg, var(--primary-forest), var(--primary-sage))",
+    },
+    {
+      icon: Brain,
+      title: "StudyBuddy AI",
+      description: "Get personalized study plans, intelligent recommendations, and AI-powered learning assistance. Let our AI help you create the perfect study strategy tailored to your goals.",
+      gradient: "linear-gradient(135deg, #6366f1, #8b5cf6)",
     },
     {
       icon: BookOpen,
@@ -366,7 +372,7 @@ const HomePage = () => {
                   <span>My Tasks</span>
                 </h2>
                 <button className="text-lg font-semibold flex items-center space-x-2 transition-colors duration-300" style={{ color: "var(--primary-forest)" }}>
-                  <span>View All</span>
+                  <Link to="/todo">View All</Link>
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
@@ -405,7 +411,7 @@ const HomePage = () => {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
               {features.map((feature, index) => (
                 <FeatureCard key={index} {...feature} delay={index * 200} />
               ))}
