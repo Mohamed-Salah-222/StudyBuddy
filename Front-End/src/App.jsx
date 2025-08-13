@@ -84,25 +84,11 @@ function App() {
       gradient: "linear-gradient(135deg, #d4a574 0%, #52796f 100%)",
     },
     {
-      title: "Study Groups",
-      description: "Connect with friends and peers for collaborative learning sessions.",
-      icon: "👥",
-      link: "/study-groups",
-      gradient: "linear-gradient(135deg, #52796f 0%, #d4a574 100%)",
-    },
-    {
       title: "Discussion Forum",
       description: "Post questions and get help from our community of learners and experts.",
       icon: "💬",
       link: "/forum",
       gradient: "linear-gradient(135deg, #84a98c 0%, #52796f 100%)",
-    },
-    {
-      title: "Study Calendar",
-      description: "Track your study sessions, assignments, exams, and important dates.",
-      icon: "📅",
-      link: "/calendar",
-      gradient: "linear-gradient(135deg, #d4a574 0%, #84a98c 100%)",
     },
   ];
 
@@ -517,34 +503,6 @@ function App() {
           </div>
 
           {/* Account Section */}
-          <div className="mb-6">
-            {!isSidebarCollapsed && (
-              <h4 className="px-3 text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "#6b7280" }}>
-                Account
-              </h4>
-            )}
-            <div className="space-y-1">
-              <Link to="/profile-settings" className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 hover:bg-gray-50 ${isSidebarCollapsed ? "justify-center" : ""}`} style={{ color: "#52796f" }} onClick={() => setIsSidebarOpen(false)} title={isSidebarCollapsed ? "Profile Settings" : ""}>
-                <span className={`text-lg ${isSidebarCollapsed ? "" : "mr-3"}`}>⚙️</span>
-                {!isSidebarCollapsed && "Profile Settings"}
-              </Link>
-            </div>
-          </div>
-
-          {/* AI Tools Section */}
-          <div className="mb-6">
-            {!isSidebarCollapsed && (
-              <h4 className="px-3 text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "#6b7280" }}>
-                Tools
-              </h4>
-            )}
-            <div className="space-y-1">
-              <Link to="/ask-ai" className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 hover:bg-gray-50 ${isSidebarCollapsed ? "justify-center" : ""}`} style={{ color: "#52796f" }} onClick={() => setIsSidebarOpen(false)} title={isSidebarCollapsed ? "Ask AI" : ""}>
-                <span className={`text-lg ${isSidebarCollapsed ? "" : "mr-3"}`}>✨</span>
-                {!isSidebarCollapsed && "Ask AI"}
-              </Link>
-            </div>
-          </div>
 
           {/* Push Notifications Section */}
         </nav>
@@ -785,35 +743,6 @@ function App() {
               <Route path="/reminder" element={<ReminderPage />} />
               <Route path="/forum" element={<DiscussionForum />} />
               <Route path="/discussion/:id" element={<DiscussionDetails />} />
-
-              {/* Placeholder Routes */}
-              <Route
-                path="/profile-settings"
-                element={
-                  <div className="flex items-center justify-center h-96 text-2xl font-bold" style={{ color: "#52796f" }}>
-                    Profile Settings Page (Coming Soon!)
-                  </div>
-                }
-              />
-              <Route
-                path="/ask-ai"
-                element={
-                  <div className="flex items-center justify-center h-96 text-2xl font-bold" style={{ color: "#52796f" }}>
-                    Ask AI Page (Coming Soon!)
-                  </div>
-                }
-              />
-              {features.map((feature, index) => (
-                <Route
-                  key={index}
-                  path={feature.link}
-                  element={
-                    <div className="flex items-center justify-center h-96 text-2xl font-bold" style={{ color: "#52796f" }}>
-                      {feature.title} Page (Coming Soon!)
-                    </div>
-                  }
-                />
-              ))}
             </Routes>
           </div>
         </main>

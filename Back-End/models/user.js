@@ -35,6 +35,10 @@ const userSchema = new Schema(
       required: false,
       default: null,
     },
+    googleTokens: {
+      type: Object,
+      default: undefined,
+    },
   },
   { timestamps: true }
 );
