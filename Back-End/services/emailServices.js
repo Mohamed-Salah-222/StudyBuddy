@@ -1,17 +1,17 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  host: "sandbox.smtp.mailtrap.io",
+  service: "gmail",
   auth: {
-    user: process.env.MAILTRAP_USER,
-    pass: process.env.MAILTRAP_PASS,
+    user: "verifysend93@gmail.com",
+    pass: process.env.GMAIL_APP_PASSWORD,
   },
 });
 
 const sendVerificationEmail = async (userEmail, verificationCode) => {
   try {
     const mailOptions = {
-      from: '"RecipeShare App" <from@example.com>',
+      from: '"Mohamed Salah App" <verifysend93@gmail.com>',
       to: userEmail,
       subject: "Your Account Verification Code",
 
@@ -28,10 +28,9 @@ const sendVerificationEmail = async (userEmail, verificationCode) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`Verification email sent to ${userEmail} (captured by Mailtrap)`);
+    console.log(`Verification email sent to ${userEmail}`);
   } catch (error) {
     console.error(`Error sending verification email to ${userEmail}:`, error);
-
     throw new Error("Could not send verification email.");
   }
 };
@@ -43,7 +42,7 @@ const sendPasswordResetEmail = async (userEmail, userId, token) => {
     const resetLink = `${frontendUrl}/reset-password/${userId}/${token}`;
 
     const mailOptions = {
-      from: '"Habit Tracker App" <from@example.com>',
+      from: '"Habit Tracker App" <verifysend93@gmail.com>',
       to: userEmail,
       subject: "Password Reset Request",
       html: `
