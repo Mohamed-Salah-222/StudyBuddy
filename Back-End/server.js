@@ -19,7 +19,7 @@ const passport = require("passport");
 const Resources = require("./models/Resources");
 const StudyPlan = require("./models/studyPlan");
 const Reminder = require("./models/reminder");
-const JobManager = require("./jobs/jobManager"); // Adjust path as needed
+const JobManager = require("./jobs/jobManager");
 const Discussion = require("./models/discussion");
 const Comment = require("./models/comment");
 
@@ -33,7 +33,6 @@ const publicVapidKey = process.env.VAPID_PUBLIC_KEY;
 const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
 const vapidSubject = process.env.VAPID_SUBJECT;
 
-// Configure webPush with VAPID details
 webPush.setVapidDetails(vapidSubject, publicVapidKey, privateVapidKey);
 
 //*--Middleware
@@ -373,7 +372,6 @@ app.post("/api/reminder", authMiddleware, async (req, res) => {
 
     const savedReminder = await newReminder.save();
 
-    // Schedule the reminder job if the due date is in the future
     const now = new Date();
     if (new Date(dueDateTime) > now && jobManager) {
       try {
@@ -381,7 +379,6 @@ app.post("/api/reminder", authMiddleware, async (req, res) => {
         console.log(`📅 Scheduled job for reminder: ${savedReminder.title}`);
       } catch (error) {
         console.error("⚠️ Error scheduling reminder job:", error);
-        // Don't fail the request if job scheduling fails
       }
     }
 
@@ -443,7 +440,6 @@ app.post("/api/discussions/:discussionId/comments", authMiddleware, async (req, 
     const discussionId = req.params.discussionId;
     const { content } = req.body;
 
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(discussionId)) {
       return res.status(400).json({ message: "Invalid discussion ID format." });
     }
@@ -465,11 +461,9 @@ app.post("/api/discussions/:discussionId/comments", authMiddleware, async (req, 
 
     const savedComment = await newComment.save();
 
-    // Add comment reference to discussion
     discussion.comments.push(savedComment._id);
     await discussion.save();
 
-    // Return populated comment to match GET response structure
     const populatedComment = await Comment.findById(savedComment._id).populate("postedBy", "username");
 
     res.status(201).json(populatedComment);
@@ -487,14 +481,13 @@ app.post("/api/discussions/:discussionId/comments", authMiddleware, async (req, 
 //*-------------------------------------------------------------------------Save Push Subscription API------------------------------------------------------------------------
 app.post("/api/subscribe", authMiddleware, async (req, res) => {
   const userId = req.user.userId;
-  const subscription = req.body; // The PushSubscription object from the frontend
+  const subscription = req.body;
 
   try {
     if (!subscription || !subscription.endpoint || !subscription.keys) {
       return res.status(400).json({ message: "Invalid subscription object provided." });
     }
 
-    // Find the user and save their subscription
     const user = await User.findById(userId);
 
     if (!user) {
@@ -609,18 +602,15 @@ app.get("/api/discussions/:discussionId/comments", authMiddleware, async (req, r
   try {
     const discussionId = req.params.discussionId;
 
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(discussionId)) {
       return res.status(400).json({ message: "Invalid discussion ID format." });
     }
 
-    // First check if discussion exists
     const discussion = await Discussion.findById(discussionId);
     if (!discussion) {
       return res.status(404).json({ message: "Discussion not found." });
     }
 
-    // Query comments directly - this is more reliable
     const comments = await Comment.find({ forumPost: discussionId }).populate("postedBy", "username").sort({ createdAt: 1 }); // Sort by creation date
 
     res.status(200).json(comments);
@@ -652,7 +642,7 @@ app.patch("/api/tasks/:id", authMiddleware, async (req, res) => {
     if (priority !== undefined) updateFields.priority = priority;
     if (dueDate !== undefined) updateFields.dueDate = dueDate;
     if (tags !== undefined) updateFields.tags = tags;
-    if (completed !== undefined) updateFields.completed = completed; // Allow updating completed status
+    if (completed !== undefined) updateFields.completed = completed;
 
     const updatedTask = await Task.findByIdAndUpdate(taskId, updateFields, { new: true, runValidators: true });
 
@@ -727,7 +717,6 @@ app.patch("/api/reminder/:id", authMiddleware, async (req, res) => {
       return res.status(403).json({ message: "Forbidden: You are not authorized to update this reminder." });
     }
 
-    // Store old due date to compare
     const oldDueDateTime = reminderToUpdate.dueDateTime;
 
     const updateFields = {};
@@ -740,13 +729,10 @@ app.patch("/api/reminder/:id", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Reminder not found after update attempt." });
     }
 
-    // Handle job rescheduling if due date changed
     if (dueDateTime && new Date(dueDateTime).getTime() !== oldDueDateTime.getTime() && jobManager) {
       try {
-        // Cancel old scheduled job
         await jobManager.cancelReminder(updatedReminder._id);
 
-        // Schedule new job if due date is in the future and not notified
         const now = new Date();
         if (new Date(dueDateTime) > now && !updatedReminder.notified) {
           await jobManager.scheduleReminder(updatedReminder._id, new Date(dueDateTime));
@@ -805,7 +791,6 @@ app.patch("/api/comments/:commentId", authMiddleware, async (req, res) => {
     const commentId = req.params.commentId;
     const { content } = req.body;
 
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(commentId)) {
       return res.status(400).json({ message: "Invalid comment ID format." });
     }
@@ -820,7 +805,6 @@ app.patch("/api/comments/:commentId", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Comment not found." });
     }
 
-    // More robust user ID comparison
     if (commentToUpdate.postedBy.toString() !== userId.toString()) {
       return res.status(403).json({ message: "Unauthorized: You are not the owner of this comment." });
     }
@@ -828,7 +812,6 @@ app.patch("/api/comments/:commentId", authMiddleware, async (req, res) => {
     commentToUpdate.content = content.trim();
     const updatedComment = await commentToUpdate.save();
 
-    // Populate the response to match the structure from GET requests
     const populatedComment = await Comment.findById(updatedComment._id).populate("postedBy", "username");
 
     res.status(200).json(populatedComment);
@@ -923,7 +906,6 @@ app.delete("/api/reminder/:id", authMiddleware, async (req, res) => {
       return res.status(403).json({ message: "Forbidden: You are not authorized to delete this reminder." });
     }
 
-    // Cancel any scheduled jobs for this reminder
     if (jobManager) {
       try {
         await jobManager.cancelReminder(reminderToDelete._id);
@@ -969,7 +951,6 @@ app.delete("/api/comments/:commentId", authMiddleware, async (req, res) => {
     const userId = req.user.userId;
     const commentId = req.params.commentId;
 
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(commentId)) {
       return res.status(400).json({ message: "Invalid comment ID format." });
     }
@@ -979,14 +960,11 @@ app.delete("/api/comments/:commentId", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Comment not found." });
     }
 
-    // Get discussion (this should exist if comment exists)
     const discussion = await Discussion.findById(commentToDelete.forumPost);
     if (!discussion) {
-      // This is actually an error - comment references non-existent discussion
       return res.status(404).json({ message: "Associated discussion not found." });
     }
 
-    // Check permissions
     const isCommentOwner = commentToDelete.postedBy.toString() === userId.toString();
     const isDiscussionCreator = discussion.startedBy.toString() === userId.toString();
 
@@ -994,10 +972,8 @@ app.delete("/api/comments/:commentId", authMiddleware, async (req, res) => {
       return res.status(403).json({ message: "Unauthorized: You do not have permission to delete this comment." });
     }
 
-    // Delete the comment
     await Comment.findByIdAndDelete(commentId);
 
-    // Remove comment reference from discussion
     discussion.comments = discussion.comments.filter((commentRef) => commentRef.toString() !== commentId.toString());
     await discussion.save();
 
@@ -1032,7 +1008,6 @@ app.get("/api/auth/google/callback", passport.authenticate("google", { session: 
   const { GoogleGenerativeAI } = await import("@google/generative-ai");
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-  // API route using Gemini
   app.post("/api/chat-gemini", async (req, res) => {
     console.log("🚀 CHAT ROUTE HIT!");
     console.log("Request body:", req.body);
@@ -1070,7 +1045,6 @@ mongoose
   .then(async () => {
     console.log("✅ Connected to MongoDB");
 
-    // Initialize and start Job Manager after MongoDB connection
     try {
       jobManager = new JobManager();
       await jobManager.start();
@@ -1080,7 +1054,6 @@ mongoose
       process.exit(1);
     }
 
-    // Start the Express server
     app.listen(port, () => {
       console.log(`🚀 Server listening on port ${port}`);
     });
@@ -1090,7 +1063,6 @@ mongoose
     process.exit(1);
   });
 
-// Graceful Shutdown
 async function gracefulShutdown() {
   console.log("🛑 Shutting down gracefully...");
 

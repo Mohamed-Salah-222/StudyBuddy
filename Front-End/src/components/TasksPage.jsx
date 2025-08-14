@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNotification } from "../context/NotificationContext"; // Add this import
+import { useNotification } from "../context/NotificationContext"; 
 
 const TasksPage = () => {
   const { token } = useAuth();
-  const { showNotification } = useNotification(); // Add this hook
+  const { showNotification } = useNotification(); 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Form states
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [formData, setFormData] = useState({
@@ -20,7 +20,6 @@ const TasksPage = () => {
     tags: "",
   });
 
-  // Helper function to get saved preferences from localStorage
   const getSavedPreferences = () => {
     try {
       const saved = localStorage.getItem("taskPreferences");
@@ -55,19 +54,19 @@ const TasksPage = () => {
 
   const savedPrefs = getSavedPreferences();
 
-  // Filter and sort states - Initialize with saved preferences
+
   const [filters, setFilters] = useState(savedPrefs.filters);
   const [sortBy, setSortBy] = useState(savedPrefs.sortBy);
   const [sortOrder, setSortOrder] = useState(savedPrefs.sortOrder);
 
-  // UI states
+
   const [showFilters, setShowFilters] = useState(false);
-  const [expandedTasks, setExpandedTasks] = useState(new Set()); // Track which tasks have expanded descriptions
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // Add delete modal state
-  const [taskToDelete, setTaskToDelete] = useState(null); // Track which task to delete
+  const [expandedTasks, setExpandedTasks] = useState(new Set()); 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null); 
   const filtersRef = useRef(null);
 
-  // Priority colors and order for sorting
+
   const priorityColors = {
     Urgent: "bg-red-100 text-red-800 border-red-200",
     High: "bg-orange-100 text-orange-800 border-orange-200",
@@ -77,7 +76,7 @@ const TasksPage = () => {
 
   const priorityOrder = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
 
-  // Toggle description expansion
+
   const toggleDescription = (taskId) => {
     const newExpanded = new Set(expandedTasks);
     if (newExpanded.has(taskId)) {
@@ -88,7 +87,6 @@ const TasksPage = () => {
     setExpandedTasks(newExpanded);
   };
 
-  // Helper function to save preferences to localStorage
   const savePreferences = (newFilters, newSortBy, newSortOrder) => {
     try {
       const preferences = {
@@ -102,32 +100,30 @@ const TasksPage = () => {
     }
   };
 
-  // Update setFilters to save preferences
+
   const updateFilters = (newFilters) => {
     setFilters(newFilters);
     savePreferences(newFilters, sortBy, sortOrder);
   };
 
-  // Update setSortBy to save preferences
   const updateSortBy = (newSortBy) => {
     setSortBy(newSortBy);
     savePreferences(filters, newSortBy, sortOrder);
   };
 
-  // Update setSortOrder to save preferences
+
   const updateSortOrder = (newSortOrder) => {
     setSortOrder(newSortOrder);
     savePreferences(filters, sortBy, newSortOrder);
   };
 
-  // Helper function to truncate description
+
   const truncateDescription = (text, maxLength = 100) => {
     if (!text) return "";
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
   };
 
-  // Fetch tasks from API
   const fetchTasks = async () => {
     try {
       setLoading(true);
@@ -152,7 +148,6 @@ const TasksPage = () => {
     }
   };
 
-  // Add new task
   const addTask = async (taskData) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks`, {
@@ -171,19 +166,19 @@ const TasksPage = () => {
       const newTask = await response.json();
       setTasks([...tasks, newTask]);
       resetForm();
-      showNotification("Task added successfully! 🎉", "success"); // Add notification
+      showNotification("Task added successfully! 🎉", "success"); 
     } catch (err) {
       setError("Failed to add task");
-      showNotification("Failed to add task", "error"); // Add notification
+      showNotification("Failed to add task", "error"); 
       console.error("Error adding task:", err);
     }
   };
 
-  // Update task - FIXED: Changed from PUT to PATCH
+
   const updateTask = async (taskId, taskData) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/${taskId}`, {
-        method: "PATCH", // Changed from PUT to PATCH
+        method: "PATCH", 
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -198,15 +193,14 @@ const TasksPage = () => {
       const updatedTask = await response.json();
       setTasks(tasks.map((task) => (task._id === taskId ? updatedTask : task)));
       resetForm();
-      showNotification("Task updated successfully! ✨", "success"); // Add notification
+      showNotification("Task updated successfully! ✨", "success"); 
     } catch (err) {
       setError("Failed to update task");
-      showNotification("Failed to update task", "error"); // Add notification
+      showNotification("Failed to update task", "error"); 
       console.error("Error updating task:", err);
     }
   };
 
-  // Delete task - Updated to use modal
   const handleDeleteClick = (task) => {
     setTaskToDelete(task);
     setShowDeleteModal(true);
@@ -228,10 +222,10 @@ const TasksPage = () => {
       }
 
       setTasks(tasks.filter((task) => task._id !== taskToDelete._id));
-      showNotification("Task deleted successfully! 🗑️", "success"); // Add notification
+      showNotification("Task deleted successfully! 🗑️", "success"); 
     } catch (err) {
       setError("Failed to delete task");
-      showNotification("Failed to delete task", "error"); // Add notification
+      showNotification("Failed to delete task", "error"); 
       console.error("Error deleting task:", err);
     } finally {
       setShowDeleteModal(false);
@@ -244,7 +238,7 @@ const TasksPage = () => {
     setTaskToDelete(null);
   };
 
-  // Toggle task completion - FIXED: Only send the fields that your API expects
+
   const toggleTaskCompletion = async (task) => {
     try {
       const updateData = {
@@ -252,10 +246,10 @@ const TasksPage = () => {
         priority: task.priority,
         dueDate: task.dueDate,
         tags: task.tags,
-        completed: !task.completed, // Only toggle the completed status
+        completed: !task.completed, 
       };
       await updateTask(task._id, updateData);
-      // Show different notification based on completion status
+
       if (!task.completed) {
         showNotification("Task completed! Great job! ✅", "success");
       } else {
@@ -263,12 +257,12 @@ const TasksPage = () => {
       }
     } catch (err) {
       setError("Failed to update task");
-      showNotification("Failed to update task", "error"); // Add notification
+      showNotification("Failed to update task", "error"); 
       console.error("Error toggling task completion:", err);
     }
   };
 
-  // Form handlers
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
@@ -312,11 +306,10 @@ const TasksPage = () => {
     setShowAddForm(true);
   };
 
-  // Filter and sort logic
+
   const getFilteredAndSortedTasks = () => {
     let filteredTasks = [...tasks];
 
-    // Apply filters
     if (filters.status !== "all") {
       filteredTasks = filteredTasks.filter((task) => (filters.status === "completed" ? task.completed : !task.completed));
     }
@@ -333,7 +326,7 @@ const TasksPage = () => {
       filteredTasks = filteredTasks.filter((task) => task.title.toLowerCase().includes(filters.search.toLowerCase()) || (task.description && task.description.toLowerCase().includes(filters.search.toLowerCase())));
     }
 
-    // Apply sorting
+
     filteredTasks.sort((a, b) => {
       let aValue, bValue;
 
@@ -367,13 +360,13 @@ const TasksPage = () => {
     return filteredTasks;
   };
 
-  // Get unique tags for filter dropdown
+
   const getUniqueTags = () => {
     const allTags = tasks.flatMap((task) => task.tags || []);
     return [...new Set(allTags)];
   };
 
-  // Effects
+
   useEffect(() => {
     fetchTasks();
   }, []);
@@ -402,7 +395,7 @@ const TasksPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold" style={{ color: "#2d5016" }}>
@@ -414,7 +407,7 @@ const TasksPage = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Filters Toggle */}
+
           <div className="relative" ref={filtersRef}>
             <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors duration-200 hover:bg-gray-50" style={{ borderColor: "rgba(82, 121, 111, 0.2)", color: "#52796f" }}>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -423,11 +416,11 @@ const TasksPage = () => {
               Filters
             </button>
 
-            {/* Filters Dropdown */}
+  
             {showFilters && (
               <div className="absolute right-0 mt-2 w-80 rounded-lg shadow-lg py-4 px-4 ring-1 ring-black ring-opacity-5 z-50" style={{ backgroundColor: "#fefcf7", borderColor: "rgba(82, 121, 111, 0.2)" }}>
                 <div className="space-y-4">
-                  {/* Search */}
+
                   <div>
                     <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
                       Search
@@ -435,7 +428,6 @@ const TasksPage = () => {
                     <input type="text" value={filters.search} onChange={(e) => updateFilters({ ...filters, search: e.target.value })} placeholder="Search tasks..." className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)", focusRingColor: "#52796f" }} />
                   </div>
 
-                  {/* Status Filter */}
                   <div>
                     <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
                       Status
@@ -447,7 +439,6 @@ const TasksPage = () => {
                     </select>
                   </div>
 
-                  {/* Priority Filter */}
                   <div>
                     <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
                       Priority
@@ -461,7 +452,7 @@ const TasksPage = () => {
                     </select>
                   </div>
 
-                  {/* Tag Filter */}
+
                   {uniqueTags.length > 0 && (
                     <div>
                       <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
@@ -478,7 +469,7 @@ const TasksPage = () => {
                     </div>
                   )}
 
-                  {/* Sort Options */}
+
                   <div className="border-t pt-4" style={{ borderColor: "rgba(82, 121, 111, 0.1)" }}>
                     <label className="block text-xs font-medium mb-2" style={{ color: "#6b7280" }}>
                       Sort By
@@ -500,7 +491,6 @@ const TasksPage = () => {
             )}
           </div>
 
-          {/* Add Task Button */}
           <button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium transition-all duration-300 hover:scale-105 shadow-lg" style={{ background: "linear-gradient(to right, #52796f, #84a98c)" }}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -510,10 +500,9 @@ const TasksPage = () => {
         </div>
       </div>
 
-      {/* Error Message */}
+
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>}
 
-      {/* Tasks Summary */}
       {tasks.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="p-4 rounded-lg border" style={{ backgroundColor: "#fefcf7", borderColor: "rgba(82, 121, 111, 0.2)" }}>
@@ -582,7 +571,7 @@ const TasksPage = () => {
         </div>
       )}
 
-      {/* Task Form Modal */}
+
       {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: "#fefcf7" }}>
@@ -599,7 +588,7 @@ const TasksPage = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Title */}
+
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
                     Title *
@@ -607,7 +596,6 @@ const TasksPage = () => {
                   <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }} placeholder="Enter task title" />
                 </div>
 
-                {/* Description */}
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
                     Description
@@ -615,7 +603,6 @@ const TasksPage = () => {
                   <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }} placeholder="Enter task description" />
                 </div>
 
-                {/* Due Date */}
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
                     Due Date
@@ -623,7 +610,6 @@ const TasksPage = () => {
                   <input type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }} />
                 </div>
 
-                {/* Priority */}
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
                     Priority
@@ -636,7 +622,7 @@ const TasksPage = () => {
                   </select>
                 </div>
 
-                {/* Tags */}
+
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
                     Tags
@@ -647,7 +633,7 @@ const TasksPage = () => {
                   </p>
                 </div>
 
-                {/* Buttons */}
+
                 <div className="flex gap-3 pt-4">
                   <button type="button" onClick={resetForm} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors duration-200" style={{ borderColor: "rgba(82, 121, 111, 0.2)", color: "#52796f" }}>
                     Cancel
@@ -662,7 +648,6 @@ const TasksPage = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && taskToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full" style={{ backgroundColor: "#fefcf7" }}>
@@ -708,7 +693,7 @@ const TasksPage = () => {
         </div>
       )}
 
-      {/* Tasks List */}
+
       <div className="space-y-3">
         {filteredTasks.length === 0 ? (
           <div className="text-center py-12">
@@ -732,7 +717,7 @@ const TasksPage = () => {
               }}
             >
               <div className="flex items-start gap-3">
-                {/* Checkbox */}
+
                 <button onClick={() => toggleTaskCompletion(task)} className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors duration-200 ${task.completed ? "bg-green-500 border-green-500" : "border-gray-300 hover:border-green-400"}`}>
                   {task.completed && (
                     <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -741,7 +726,6 @@ const TasksPage = () => {
                   )}
                 </button>
 
-                {/* Task Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
@@ -749,14 +733,12 @@ const TasksPage = () => {
                         {task.title}
                       </h3>
 
-                      {/* Enhanced Description Display */}
                       {task.description && task.description.trim() && (
                         <div className="mt-2 w-full max-w-full overflow-hidden">
                           <div className={`text-sm ${task.completed ? "line-through text-gray-400" : ""}`} style={{ color: task.completed ? "#9ca3af" : "#6b7280" }}>
                             {expandedTasks.has(task._id) ? <div className="whitespace-pre-wrap break-all max-w-full">{task.description}</div> : <div className="break-all max-w-full">{truncateDescription(task.description)}</div>}
                           </div>
 
-                          {/* Show/Hide Toggle for long descriptions */}
                           {task.description.length > 100 && (
                             <button onClick={() => toggleDescription(task._id)} className="text-xs mt-1 text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center gap-1">
                               {expandedTasks.has(task._id) ? (
@@ -780,7 +762,7 @@ const TasksPage = () => {
                       )}
                     </div>
 
-                    {/* Actions */}
+
                     <div className="flex items-center gap-2">
                       <button onClick={() => startEditing(task)} className="p-1 text-gray-400 hover:text-blue-600 transition-colors duration-200" title="Edit task">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -795,12 +777,12 @@ const TasksPage = () => {
                     </div>
                   </div>
 
-                  {/* Task Meta */}
+
                   <div className="flex flex-wrap items-center gap-3 mt-3">
-                    {/* Priority */}
+
                     <span className={`px-2 py-1 text-xs font-medium rounded-full border ${priorityColors[task.priority]}`}>{task.priority}</span>
 
-                    {/* Due Date */}
+
                     {task.dueDate && (
                       <span className="flex items-center gap-1 text-xs" style={{ color: "#6b7280" }}>
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -810,7 +792,6 @@ const TasksPage = () => {
                       </span>
                     )}
 
-                    {/* Tags */}
                     {task.tags && task.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {task.tags.map((tag, index) => (

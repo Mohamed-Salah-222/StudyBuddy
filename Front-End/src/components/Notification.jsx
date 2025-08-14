@@ -5,10 +5,10 @@ import { useEffect } from "react";
 function Notification({ onNotificationShow }) {
   const { notification, showNotification } = useNotification();
 
-  // When a notification appears, save it to the dropdown list
+
   useEffect(() => {
     if (notification && onNotificationShow) {
-      // Only save reminder-type notifications to the dropdown
+
       if (notification.type === "reminder" || notification.isReminder) {
         onNotificationShow({
           title: notification.message,
@@ -76,7 +76,7 @@ function Notification({ onNotificationShow }) {
           maxWidth: "400px",
         }}
       >
-        {/* Subtle gradient overlay */}
+
         <div
           className="absolute inset-0 rounded-2xl opacity-20 pointer-events-none"
           style={{
@@ -84,24 +84,21 @@ function Notification({ onNotificationShow }) {
           }}
         />
 
-        {/* Content */}
         <div className="relative flex items-start space-x-3">
-          {/* Icon */}
+
           <div className="flex-shrink-0 mt-0.5">{getIcon(notification.type)}</div>
 
-          {/* Message */}
+ 
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold leading-relaxed">{notification.message}</p>
           </div>
 
-          {/* Close button */}
           <button onClick={() => showNotification(null)} className="flex-shrink-0 p-1 rounded-full transition-all duration-200 hover:bg-white hover:bg-opacity-20 active:scale-95">
             <X size={16} />
           </button>
         </div>
       </div>
 
-      {/* Custom animations */}
       <style jsx>{`
         @keyframes notification {
           0% {

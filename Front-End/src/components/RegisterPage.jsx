@@ -34,24 +34,23 @@ function RegisterPage() {
 
   return (
     <div className="flex items-center justify-center bg-gradient-to-br from-green-50 via-stone-50 to-amber-50 -m-4 md:-m-8 relative overflow-hidden" style={{ minHeight: "calc(100vh - 120px)" }}>
-      {/* Animated Background Elements */}
+
       <div className="absolute inset-0 -z-10">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-green-200/20 to-amber-200/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-stone-200/20 to-green-200/20 rounded-full blur-3xl animate-pulse delay-1000" />
         <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-amber-200/10 to-green-200/10 rounded-full blur-2xl animate-ping" style={{ animationDuration: "5s" }} />
       </div>
 
-      {/* Subtle Grid Pattern */}
       <div className="absolute inset-0 -z-5 opacity-10">
         <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(132, 169, 140, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(132, 169, 140, 0.1) 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
       </div>
 
-      {/* Register Card */}
+
       <div className="w-full max-w-md backdrop-blur-2xl border rounded-3xl shadow-2xl p-10 space-y-6 relative z-10 transition-all duration-500" style={{ backgroundColor: "rgba(254, 252, 247, 0.8)", borderColor: "rgba(132, 169, 140, 0.3)", boxShadow: "0 25px 50px -12px rgba(82, 121, 111, 0.15)" }}>
-        {/* Glow Effect */}
+
         <div className="absolute inset-0 rounded-3xl -z-10" style={{ background: "linear-gradient(135deg, rgba(132, 169, 140, 0.05), rgba(212, 165, 116, 0.05))" }} />
 
-        {/* Header */}
+
         <div className="text-center space-y-3">
           <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center shadow-lg relative overflow-hidden" style={{ background: "linear-gradient(135deg, #84a98c, #52796f)", boxShadow: "0 10px 25px -5px rgba(82, 121, 111, 0.3)" }}>
             <div className="absolute inset-0 rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent)" }} />
@@ -67,7 +66,6 @@ function RegisterPage() {
           </p>
         </div>
 
-        {/* Form */}
         <div className="space-y-5">
           <div className="group">
             <label htmlFor="username" className="block text-sm font-semibold mb-2" style={{ color: "#2d5016" }}>
@@ -207,7 +205,7 @@ function RegisterPage() {
             </div>
           </div>
 
-          {/* Password Strength Indicator */}
+
           {password && (
             <div className="space-y-2">
               <div className="flex space-x-1">
@@ -282,7 +280,7 @@ function RegisterPage() {
           </button>
         </div>
 
-        {/* Login Link */}
+
         <div className="text-center border-t pt-6" style={{ borderColor: "rgba(132, 169, 140, 0.2)" }}>
           <p className="text-sm" style={{ color: "#6b7280" }}>
             Already have an account?{" "}

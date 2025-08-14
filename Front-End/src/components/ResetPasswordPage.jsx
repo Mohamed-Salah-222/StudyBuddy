@@ -269,7 +269,7 @@ function ResetPasswordPage() {
           </button>
         </form>
 
-        {/* Password Requirements */}
+
         <div
           className="p-4 border rounded-xl backdrop-blur-sm"
           style={{

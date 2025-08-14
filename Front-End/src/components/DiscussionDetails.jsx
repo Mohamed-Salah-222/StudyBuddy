@@ -43,7 +43,7 @@ const DiscussionDetails = () => {
       setComments(data);
     } catch (err) {
       console.error("Error loading comments", err);
-      setComments([]); // Set empty array on error
+      setComments([]); 
     }
   };
 
@@ -129,7 +129,7 @@ const DiscussionDetails = () => {
       console.log("Comment added successfully:", newCommentData);
 
       setNewComment("");
-      await fetchComments(); // Refresh comments
+      await fetchComments(); 
     } catch (err) {
       console.error("Comment add failed", err);
       alert(`Failed to add comment: ${err.message}`);
@@ -162,7 +162,7 @@ const DiscussionDetails = () => {
 
       setEditCommentId(null);
       setEditContent("");
-      await fetchComments(); // Refresh comments
+      await fetchComments(); 
     } catch (err) {
       console.error("Comment update failed", err);
       alert(`Failed to update comment: ${err.message}`);
@@ -186,7 +186,7 @@ const DiscussionDetails = () => {
       }
 
       console.log("Comment deleted successfully");
-      await fetchComments(); // Refresh comments
+      await fetchComments(); 
     } catch (err) {
       console.error("Delete comment failed", err);
       alert(`Failed to delete comment: ${err.message}`);
@@ -198,7 +198,7 @@ const DiscussionDetails = () => {
 
   return (
     <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden">
-      {/* Header Section */}
+
       <div className="bg-gradient-to-r from-[#52796f] to-[#84a98c] p-8 text-white">
         <h2 className="text-3xl font-bold mb-3 leading-tight text-[#fefcf7]">{discussion.title}</h2>
         <p className="text-[#f8f6f0] text-lg leading-relaxed mb-4">{discussion.context}</p>
@@ -224,7 +224,6 @@ const DiscussionDetails = () => {
         </div>
       </div>
 
-      {/* Creator Actions */}
       {isCreator && (
         <div className="px-8 py-4 bg-[#f8f6f0] border-b border-[#84a98c]/20">
           <div className="flex gap-3">
@@ -245,7 +244,7 @@ const DiscussionDetails = () => {
         </div>
       )}
 
-      {/* Comments Section */}
+
       <div className="p-8">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-[#2d5016] flex items-center">
@@ -259,7 +258,7 @@ const DiscussionDetails = () => {
           </span>
         </div>
 
-        {/* Comments List */}
+
         {comments.length === 0 ? (
           <div className="text-center py-12">
             <svg className="w-16 h-16 mx-auto text-[#84a98c]/40 mb-4" fill="currentColor" viewBox="0 0 20 20">
@@ -354,7 +353,6 @@ const DiscussionDetails = () => {
           </div>
         )}
 
-        {/* Add Comment Section */}
         <div className="bg-[#fefcf7] border-2 border-[#84a98c]/20 rounded-xl p-6 shadow-sm">
           <h4 className="text-lg font-semibold text-[#2d5016] mb-4 flex items-center">
             <svg className="w-5 h-5 mr-2 text-[#52796f]" fill="currentColor" viewBox="0 0 20 20">

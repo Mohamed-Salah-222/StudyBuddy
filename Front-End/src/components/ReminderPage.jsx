@@ -7,13 +7,13 @@ const DateTimePicker = ({ value, onChange, label, required = false }) => {
 
   useEffect(() => {
     if (value) {
-      // Parse the incoming value and format for local display
+
       const dateObj = new Date(value);
 
-      // Format for date input (YYYY-MM-DD)
+
       const dateStr = dateObj.getFullYear() + "-" + String(dateObj.getMonth() + 1).padStart(2, "0") + "-" + String(dateObj.getDate()).padStart(2, "0");
 
-      // Format for time input (HH:MM)
+
       const timeStr = String(dateObj.getHours()).padStart(2, "0") + ":" + String(dateObj.getMinutes()).padStart(2, "0");
 
       setDate(dateStr);
@@ -24,11 +24,11 @@ const DateTimePicker = ({ value, onChange, label, required = false }) => {
   const createDateTime = (dateValue, timeValue) => {
     if (!dateValue || !timeValue) return null;
 
-    // Create date object in local timezone
+ 
     const [year, month, day] = dateValue.split("-").map(Number);
     const [hours, minutes] = timeValue.split(":").map(Number);
 
-    // Create date in local timezone (no UTC conversion)
+
     const dateObj = new Date(year, month - 1, day, hours, minutes);
 
     return dateObj.toISOString();
@@ -155,7 +155,7 @@ const ReminderPage = () => {
 
   const createReminder = async (reminderData) => {
     try {
-      // Map reminderTime to dueDateTime for the API
+
       const apiData = {
         title: reminderData.title,
         dueDateTime: reminderData.reminderTime,
@@ -189,7 +189,7 @@ const ReminderPage = () => {
 
   const updateReminder = async (id, reminderData) => {
     try {
-      // Map reminderTime to dueDateTime for the API
+
       const apiData = {
         title: reminderData.title,
         dueDateTime: reminderData.reminderTime,
@@ -262,7 +262,7 @@ const ReminderPage = () => {
   const startEdit = (reminder) => {
     setFormData({
       title: reminder.title,
-      reminderTime: reminder.dueDateTime || reminder.reminderTime, // Handle both field names
+      reminderTime: reminder.dueDateTime || reminder.reminderTime, 
       type: reminder.type,
     });
     setEditingId(reminder._id);
@@ -313,8 +313,8 @@ const ReminderPage = () => {
   useEffect(() => {
     fetchReminders();
 
-    // Set up real-time updates
-    const interval = setInterval(fetchReminders, 30000); // Refresh every 30 seconds
+
+    const interval = setInterval(fetchReminders, 30000); 
 
     return () => clearInterval(interval);
   }, []);
@@ -322,7 +322,7 @@ const ReminderPage = () => {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#fefcf7" }}>
       <div className="max-w-4xl mx-auto p-6">
-        {/* Header */}
+
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold" style={{ color: "#2d5016" }}>
@@ -338,7 +338,7 @@ const ReminderPage = () => {
           </button>
         </div>
 
-        {/* Error Message */}
+
         {error && (
           <div className="mb-6 p-4 rounded-lg border border-red-200" style={{ backgroundColor: "#fef2f2" }}>
             <div className="flex items-center gap-2">
@@ -348,7 +348,7 @@ const ReminderPage = () => {
           </div>
         )}
 
-        {/* Form Modal */}
+
         {showForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="w-full max-w-md rounded-lg shadow-xl" style={{ backgroundColor: "#f8f6f0" }}>
@@ -424,7 +424,7 @@ const ReminderPage = () => {
           </div>
         )}
 
-        {/* Reminders List */}
+
         <div className="space-y-4">
           {loading ? (
             <div className="text-center py-12">
@@ -487,7 +487,7 @@ const ReminderPage = () => {
           )}
         </div>
 
-        {/* Footer */}
+
         <div className="mt-12 text-center text-sm" style={{ color: "#6b7280" }}>
           <p>Reminders refresh automatically every 30 seconds</p>
         </div>

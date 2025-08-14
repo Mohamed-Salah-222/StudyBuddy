@@ -12,13 +12,12 @@ const colorScheme = {
   "--text-forest": "#2d5016",
   "--text-gray": "#6b7280",
 };
-// HomePage component now accepts 'features' and 'showFeatures' as props
-// Apply colors to document root
+
 Object.entries(colorScheme).forEach(([key, value]) => {
   document.documentElement.style.setProperty(key, value);
 });
 
-// Utility Components
+
 const FeatureCard = ({ icon: Icon, title, description, gradient, delay = 0 }) => (
   <div
     className="group p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 hover:scale-105 hover:shadow-xl"
@@ -39,10 +38,6 @@ const FeatureCard = ({ icon: Icon, title, description, gradient, delay = 0 }) =>
         {description}
       </p>
     </div>
-    <button className="flex items-center space-x-2 text-lg font-semibold transition-all duration-300 group-hover:translate-x-2" style={{ color: "var(--primary-forest)" }}>
-      <span>Learn More</span>
-      <ArrowRight className="w-5 h-5" />
-    </button>
   </div>
 );
 
@@ -154,7 +149,7 @@ const ActivityItem = ({ icon, title, time, gradient }) => (
   </div>
 );
 
-// Main Component
+
 const HomePage = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -165,7 +160,6 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Check authentication and fetch data
   useEffect(() => {
     checkAuthAndFetchData();
   }, []);
@@ -178,11 +172,11 @@ const HomePage = () => {
         return;
       }
 
-      // Decode token to get user info
+
       const payload = JSON.parse(atob(token.split(".")[1]));
       setUser(payload);
 
-      // Fetch user data
+
       await Promise.all([fetchTasks(token), fetchDiscussions(token), fetchResources(token), fetchReminders(token)]);
     } catch (error) {
       console.error("Error:", error);
@@ -199,7 +193,7 @@ const HomePage = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setTasks(data.slice(0, 6)); // Show only first 6 tasks
+        setTasks(data.slice(0, 6)); 
       }
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -248,7 +242,6 @@ const HomePage = () => {
     }
   };
 
-  // Calculate user stats
   const userStats = user
     ? [
         { icon: "📋", value: tasks.length, label: "Total Tasks" },
@@ -260,7 +253,7 @@ const HomePage = () => {
       ]
     : [];
 
-  // Features for non-logged users
+
   const features = [
     {
       icon: CheckSquare,
@@ -309,9 +302,9 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--secondary-off-white)" }}>
-      {/* Hero Section */}
+
       <section className="relative py-20 px-4 text-center overflow-hidden">
-        {/* Background Effects */}
+
         <div className="absolute inset-0 rounded-3xl blur-3xl opacity-30" style={{ background: "radial-gradient(ellipse at center, var(--primary-sage) 0%, transparent 70%)" }} />
 
         <div className="relative max-w-6xl mx-auto">
@@ -347,7 +340,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* User Stats - Logged in users only */}
       {user && userStats.length > 0 && (
         <section className="py-16 px-4">
           <div className="max-w-6xl mx-auto">
@@ -360,11 +352,10 @@ const HomePage = () => {
         </section>
       )}
 
-      {/* User Dashboard - Logged in users */}
       {user && (
         <section className="py-16 px-4">
           <div className="max-w-7xl mx-auto space-y-16">
-            {/* My Tasks */}
+
             <div>
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-3xl md:text-4xl font-bold flex items-center space-x-3" style={{ color: "var(--text-forest)" }}>
@@ -398,7 +389,7 @@ const HomePage = () => {
         </section>
       )}
 
-      {/* Features Section - Non-logged users */}
+ 
       {!user && (
         <section className="py-20 px-4">
           <div className="max-w-7xl mx-auto">
@@ -420,7 +411,7 @@ const HomePage = () => {
         </section>
       )}
 
-      {/* Motivational Quote Section */}
+
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div

@@ -1,4 +1,3 @@
-// src/components/VerifyPage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -7,7 +6,7 @@ function VerifyPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false); // To disable button while resending
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -42,17 +41,14 @@ function VerifyPage() {
     }
   };
 
-  // --- NEW FUNCTION FOR RESENDING THE CODE ---
   const handleResend = async () => {
     setError("");
     setMessage("Sending a new code...");
     try {
-      // We call the register endpoint again. The backend logic will find the
-      // unverified user and send them a new code.
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // We need to send a dummy password/username as they are required by the backend
+
         body: JSON.stringify({ email, password: "dummyPassword", username: "dummyUser" }),
       });
       const data = await response.json();

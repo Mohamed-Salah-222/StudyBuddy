@@ -17,7 +17,6 @@ import DiscussionForum from "./components/DiscussionForum";
 import DiscussionDetails from "./components/DiscussionDetails";
 import AIStudyPage from "./components/AIStudyPage";
 
-// Utility function for VAPID key conversion
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -31,37 +30,31 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
-// VAPID Public Key - Replace with your actual key
 const VAPID_PUBLIC_KEY = "BBjKbsfZi6e5QAP5Pf3mQaD7IOJ8JC_-seZvU-SQKsHQiiGjhsb-_jFKJHSeYck8uXrZI4JVSnmtzaXYA_YRylc";
 
 function App() {
   const { user, logout, token } = useAuth();
   const navigate = useNavigate();
 
-  // State for notification bell and tasks
   const [urgentHighTasks, setUrgentHighTasks] = useState([]);
   const [taskNotificationCount, setTaskNotificationCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [activeTab, setActiveTab] = useState("tasks"); // 'tasks' or 'reminders'
+  const [activeTab, setActiveTab] = useState("tasks");
   const notificationsRef = useRef(null);
 
-  // State for reminder notifications - now fetched from API
   const [reminderNotifications, setReminderNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isDeletingReminder, setIsDeletingReminder] = useState(null);
 
-  // State for sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const sidebarRef = useRef(null);
 
-  // State for push notifications
   const [pushNotificationEnabled, setPushNotificationEnabled] = useState(false);
   const [pushPermission, setPushPermission] = useState(Notification.permission);
   const [pushMessage, setPushMessage] = useState("");
   const [isSubscribing, setIsSubscribing] = useState(false);
 
-  // Define features
   const features = [
     {
       title: "Smart Todo List",
@@ -100,7 +93,6 @@ function App() {
     },
   ];
 
-  // Function to fetch tasks from the backend
   const fetchTasks = async () => {
     if (!token) {
       setUrgentHighTasks([]);
@@ -136,7 +128,6 @@ function App() {
     }
   };
 
-  // Function to fetch reminder notifications from API
   const fetchReminderNotifications = async () => {
     if (!token) {
       setReminderNotifications([]);
@@ -165,21 +156,19 @@ function App() {
 
       const reminders = await response.json();
 
-      // Transform the reminders to match the notification format
       const transformedReminders = reminders.map((reminder) => ({
         _id: reminder._id,
         title: reminder.title || reminder.subject || "Reminder",
         type: reminder.type || "reminder",
         dueTime: reminder.reminderTime || reminder.createdAt,
-        isRead: reminder.notified || false, // Use notified field as read status
+        isRead: reminder.notified || false,
         createdAt: reminder.createdAt,
         description: reminder.description,
-        originalReminder: reminder, // Keep reference to original reminder object
+        originalReminder: reminder,
       }));
 
       setReminderNotifications(transformedReminders);
 
-      // Count unread notifications (where notified is false)
       const unreadReminders = transformedReminders.filter((n) => !n.isRead);
       setUnreadCount(unreadReminders.length);
     } catch (error) {
@@ -189,7 +178,6 @@ function App() {
     }
   };
 
-  // Function to delete a reminder
   const deleteReminder = async (reminderId) => {
     if (!token) return;
 
@@ -214,55 +202,46 @@ function App() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Remove the reminder from local state
       setReminderNotifications((prev) => {
         const updated = prev.filter((reminder) => reminder._id !== reminderId);
-        // Update unread count
+
         const unreadReminders = updated.filter((n) => !n.isRead);
         setUnreadCount(unreadReminders.length);
         return updated;
       });
     } catch (error) {
       console.error("Error deleting reminder:", error);
-      // You might want to show an error message to the user here
     } finally {
       setIsDeletingReminder(null);
     }
   };
 
-  // Push notification subscription function
   const subscribeUser = async () => {
     setIsSubscribing(true);
     setPushMessage("");
 
     try {
-      // Check for Service Worker and Push API support
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
         setPushMessage("Push notifications are not supported by your browser.");
         setIsSubscribing(false);
         return;
       }
 
-      // Check if Notification API is available
       if (!("Notification" in window)) {
         setPushMessage("This browser does not support notifications.");
         setIsSubscribing(false);
         return;
       }
 
-      // Register Service Worker
       console.log("Registering service worker...");
       const registration = await navigator.serviceWorker.register("/service-worker.js");
       console.log("Service Worker registered:", registration);
 
-      // Request Notification Permission - Handle both callback and promise styles
       let currentPermission;
       if (typeof Notification.requestPermission === "function") {
         try {
-          // Modern promise-based approach
           currentPermission = await Notification.requestPermission();
         } catch (error) {
-          // Fallback to callback approach for older browsers
           currentPermission = await new Promise((resolve) => {
             Notification.requestPermission((permission) => {
               resolve(permission);
@@ -283,7 +262,6 @@ function App() {
         return;
       }
 
-      // Subscribe to Push Notifications
       console.log("Subscribing to push notifications...");
       const subscribeOptions = {
         userVisibleOnly: true,
@@ -292,7 +270,6 @@ function App() {
       const pushSubscription = await registration.pushManager.subscribe(subscribeOptions);
       console.log("Push Subscription:", pushSubscription);
 
-      // Send Subscription to Backend
       console.log("Sending subscription to backend...");
       if (!token) {
         setPushMessage("Authentication token not found. Please log in.");
@@ -325,41 +302,29 @@ function App() {
     }
   };
 
-  // Handle push notification toggle
   const handlePushNotificationToggle = async () => {
     if (!pushNotificationEnabled) {
       await subscribeUser();
     } else {
-      // Disable notifications (you might want to implement unsubscribe logic here)
       setPushNotificationEnabled(false);
       setPushMessage("Push notifications disabled.");
     }
   };
 
-  // Handle notification item click
   const handleNotificationClick = async (notification) => {
-    // You can add navigation logic here if needed
     console.log("Notification clicked:", notification);
   };
 
-  // Mark notification as read (for compatibility - not used with API approach)
   const markAsRead = async (notificationId) => {
-    // Since we're using the API approach, we don't need this function
-    // but keeping it for compatibility
     console.log("Mark as read not implemented for API-based reminders");
   };
 
-  // Handle mark all as read (for compatibility - not used with API approach)
   const handleMarkAllAsRead = async () => {
-    // Since we're using the API approach, we don't need this function
-    // but keeping it for compatibility
     console.log("Mark all as read not implemented for API-based reminders");
   };
 
-  // Calculate total notification count
   const totalNotificationCount = taskNotificationCount + reminderNotifications.length;
 
-  // Effect to fetch tasks and reminders when the component mounts or user/token changes
   useEffect(() => {
     fetchTasks();
     fetchReminderNotifications();
@@ -370,7 +335,6 @@ function App() {
     return () => clearInterval(intervalId);
   }, [user, token]);
 
-  // Effect to handle clicks outside the notification dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
@@ -383,7 +347,6 @@ function App() {
     };
   }, []);
 
-  // Effect to close sidebar on clicks outside it (mobile only)
   useEffect(() => {
     const handleClickOutsideSidebar = (event) => {
       if (isSidebarOpen && sidebarRef.current && !sidebarRef.current.contains(event.target) && !event.target.closest(".sidebar-toggle-button")) {
@@ -391,7 +354,6 @@ function App() {
       }
     };
 
-    // Only add event listener on mobile
     if (window.innerWidth < 768) {
       document.addEventListener("mousedown", handleClickOutsideSidebar);
     }
@@ -401,7 +363,6 @@ function App() {
     };
   }, [isSidebarOpen]);
 
-  // Handle window resize to close sidebar on mobile
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768 && isSidebarOpen) {
@@ -430,7 +391,6 @@ function App() {
     setIsSidebarCollapsed((prev) => !prev);
   };
 
-  // Format time for display
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -445,19 +405,14 @@ function App() {
     }
   };
 
-  // Function to add notification when new reminder is created (called from Notification component)
   const addNotificationToList = (notification) => {
-    // Refresh the reminders list when a new notification is triggered
     fetchReminderNotifications();
   };
 
-  // Sidebar component for logged-in users
   const Sidebar = () => (
     <>
-      {/* Mobile Overlay */}
       {isSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
 
-      {/* Sidebar */}
       <div
         ref={sidebarRef}
         className={`fixed top-16 left-0 bottom-0 transform transition-all duration-300 ease-in-out z-40 md:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} ${isSidebarCollapsed ? "w-16" : "w-64"}`}
@@ -467,7 +422,6 @@ function App() {
           boxShadow: "4px 0 6px -1px rgba(82, 121, 111, 0.1)",
         }}
       >
-        {/* Sidebar Header */}
         <div className="p-4 flex items-center justify-between border-b" style={{ borderColor: "rgba(82, 121, 111, 0.1)" }}>
           {!isSidebarCollapsed && (
             <h3 className="text-xl font-bold" style={{ color: "#2d5016" }}>
@@ -475,14 +429,12 @@ function App() {
             </h3>
           )}
           <div className="flex items-center space-x-2">
-            {/* Desktop Collapse/Expand Button */}
             <button onClick={toggleSidebarCollapse} className="hidden md:flex p-2 rounded-full hover:bg-gray-100 transition-colors duration-200" style={{ color: "#52796f" }} title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
               <svg className={`h-5 w-5 transform transition-transform duration-200 ${isSidebarCollapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
               </svg>
             </button>
 
-            {/* Mobile Close Button */}
             <button onClick={toggleSidebar} className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 md:hidden" style={{ color: "#52796f" }}>
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -491,9 +443,7 @@ function App() {
           </div>
         </div>
 
-        {/* Sidebar Content */}
         <nav className="flex-1 px-2 py-4 overflow-y-auto">
-          {/* Main Features Section */}
           <div className="mb-6">
             {!isSidebarCollapsed && (
               <h4 className="px-3 text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "#6b7280" }}>
@@ -509,10 +459,6 @@ function App() {
               ))}
             </div>
           </div>
-
-          {/* Account Section */}
-
-          {/* Push Notifications Section */}
         </nav>
       </div>
     </>
@@ -522,27 +468,22 @@ function App() {
     <div className="min-h-screen font-sans relative" style={{ background: "linear-gradient(to bottom right, #fefcf7, #f8f6f0)" }}>
       <Notification onNotificationShow={addNotificationToList} />
 
-      {/* Background Elements */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse" style={{ background: "radial-gradient(circle, rgba(132, 169, 140, 0.08) 0%, transparent 70%)" }} />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse delay-2000" style={{ background: "radial-gradient(circle, rgba(212, 165, 116, 0.08) 0%, transparent 70%)" }} />
         <div className="absolute top-1/3 left-0 w-80 h-80 rounded-full blur-3xl animate-pulse delay-1000" style={{ background: "radial-gradient(circle, rgba(132, 169, 140, 0.06) 0%, transparent 70%)" }} />
       </div>
 
-      {/* Subtle Grid Pattern */}
       <div className="absolute inset-0 -z-5 opacity-[0.02]">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(82,121,111,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(82,121,111,0.1)_1px,transparent_1px)] bg-[size:32px_32px]" />
       </div>
 
-      {/* Navigation Bar */}
       <nav className="backdrop-blur-xl border-b sticky top-0 z-50 relative shadow-sm" style={{ backgroundColor: "rgba(132, 169, 140, 0.15)", borderColor: "rgba(82, 121, 111, 0.2)" }}>
         <div className="absolute inset-0 -z-10" style={{ background: "linear-gradient(to right, rgba(132, 169, 140, 0.08), rgba(212, 165, 116, 0.08), rgba(132, 169, 140, 0.08))" }} />
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Left Side - Logo and Sidebar Toggle */}
             <div className="flex items-center space-x-4">
-              {/* Sidebar Toggle Button (Mobile Only) */}
               {user && (
                 <button onClick={toggleSidebar} className="sidebar-toggle-button p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 md:hidden" style={{ color: "#52796f" }}>
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -551,7 +492,6 @@ function App() {
                 </button>
               )}
 
-              {/* Logo */}
               <Link to="/" className="text-2xl font-bold hover:scale-105 transition-all duration-300 group flex items-center space-x-2" style={{ color: "#2d5016" }}>
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110" style={{ background: "linear-gradient(to bottom right, #52796f, #84a98c)", boxShadow: "0 4px 6px -1px rgba(82, 121, 111, 0.25)" }}>
                   <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -567,11 +507,9 @@ function App() {
               </Link>
             </div>
 
-            {/* Right Side */}
             <div className="flex items-center space-x-4">
               {user ? (
                 <div className="flex items-center space-x-4">
-                  {/* Notification Bell */}
                   <div className="relative" ref={notificationsRef}>
                     <button onClick={toggleNotifications} className="relative p-2 rounded-full hover:bg-gray-100 transition-colors duration-200" style={{ color: "#52796f" }}>
                       <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -584,10 +522,8 @@ function App() {
                       )}
                     </button>
 
-                    {/* Notifications Dropdown */}
                     {showNotifications && (
                       <div className="absolute right-0 mt-2 w-80 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50" style={{ backgroundColor: "#fefcf7", borderColor: "rgba(82, 121, 111, 0.2)" }}>
-                        {/* Tabs */}
                         <div className="flex border-b" style={{ borderColor: "rgba(82, 121, 111, 0.1)" }}>
                           <button onClick={() => setActiveTab("tasks")} className={`flex-1 px-4 py-2 text-xs font-semibold transition-colors duration-200 ${activeTab === "tasks" ? "border-b-2 border-green-500 text-green-600" : "text-gray-500 hover:text-gray-700"}`}>
                             Tasks ({taskNotificationCount})
@@ -599,7 +535,6 @@ function App() {
 
                         <div className="max-h-96 overflow-y-auto">
                           {activeTab === "tasks" ? (
-                            // Tasks Tab Content
                             urgentHighTasks.length > 0 ? (
                               urgentHighTasks.map((task) => (
                                 <div key={task._id} className="px-4 py-3 hover:bg-gray-50 border-b last:border-b-0" style={{ borderColor: "rgba(82, 121, 111, 0.1)" }}>
@@ -618,7 +553,6 @@ function App() {
                               </div>
                             )
                           ) : (
-                            // Reminders Tab Content
                             <>
                               {reminderNotifications.length > 0 ? (
                                 reminderNotifications.map((notification) => (
@@ -645,7 +579,6 @@ function App() {
                                         </div>
                                       </div>
 
-                                      {/* Delete Button */}
                                       <div className="flex items-center space-x-2 ml-2">
                                         <button
                                           onClick={(e) => {
@@ -683,7 +616,6 @@ function App() {
                     )}
                   </div>
 
-                  {/* User Info (Desktop) */}
                   <div className="hidden sm:flex items-center space-x-3 px-3 py-2 backdrop-blur-sm border rounded-xl shadow-sm" style={{ backgroundColor: "rgba(132, 169, 140, 0.1)", borderColor: "rgba(82, 121, 111, 0.2)" }}>
                     <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-md" style={{ background: "linear-gradient(to bottom right, #52796f, #84a98c)" }}>
                       <span className="text-white text-sm font-bold">{user.username.charAt(0).toUpperCase()}</span>
@@ -695,12 +627,10 @@ function App() {
                     </div>
                   </div>
 
-                  {/* User Avatar (Mobile) */}
                   <div className="sm:hidden w-8 h-8 rounded-full flex items-center justify-center shadow-md" style={{ background: "linear-gradient(to bottom right, #52796f, #84a98c)" }}>
                     <span className="text-white text-sm font-bold">{user.username.charAt(0).toUpperCase()}</span>
                   </div>
 
-                  {/* Logout Button */}
                   <button onClick={handleLogout} className="flex items-center space-x-2 px-4 py-2 rounded-xl border border-transparent text-sm font-medium transition-all duration-300 hover:bg-gray-100" style={{ color: "#52796f" }}>
                     <svg className="w-4 h-4 group-hover:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -728,12 +658,9 @@ function App() {
         </div>
       </nav>
 
-      {/* Layout Container */}
       <div className="flex">
-        {/* Sidebar - Only render for logged-in users */}
         {user && <Sidebar />}
 
-        {/* Main Content */}
         <main className={`flex-1 transition-all duration-300 ${user ? (isSidebarCollapsed ? "md:ml-16" : "md:ml-64") : ""}`}>
           <div className="container mx-auto p-4 md:p-8 relative z-10">
             <div className="absolute inset-0 rounded-3xl blur-3xl -z-10" style={{ background: "radial-gradient(ellipse at center, rgba(132, 169, 140, 0.03) 0%, transparent 70%)" }} />

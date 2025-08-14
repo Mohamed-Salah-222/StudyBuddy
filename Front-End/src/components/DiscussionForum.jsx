@@ -90,14 +90,14 @@ const DiscussionForum = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-stone-50 to-amber-50 p-6" style={{ backgroundColor: "#fefcf7" }}>
-      {/* Background Elements */}
+
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full blur-3xl animate-pulse opacity-30" style={{ background: "radial-gradient(circle, rgba(132, 169, 140, 0.2) 0%, rgba(82, 121, 111, 0.1) 100%)" }}></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-3xl animate-pulse delay-1000 opacity-30" style={{ background: "radial-gradient(circle, rgba(212, 165, 116, 0.2) 0%, rgba(132, 169, 140, 0.1) 100%)" }}></div>
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-        {/* Header Section */}
+
         <div className="mb-8">
           <h1
             className="text-4xl font-bold mb-2"
@@ -115,7 +115,6 @@ const DiscussionForum = () => {
           </p>
         </div>
 
-        {/* Control Bar */}
         <div
           className="backdrop-blur-xl border rounded-2xl shadow-lg p-6 mb-8"
           style={{
@@ -125,7 +124,7 @@ const DiscussionForum = () => {
           }}
         >
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            {/* Create Discussion Button */}
+
             <button
               className="group relative overflow-hidden font-semibold px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg min-w-fit"
               style={{
@@ -152,7 +151,7 @@ const DiscussionForum = () => {
             </button>
 
             <div className="flex flex-col sm:flex-row gap-4 flex-1 lg:max-w-2xl w-full">
-              {/* Search Input */}
+
               <div className="relative flex-1 group">
                 <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 pointer-events-none" fill="none" stroke="#6b7280" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -181,7 +180,6 @@ const DiscussionForum = () => {
                 />
               </div>
 
-              {/* Tag Filter */}
               <div className="relative">
                 <select
                   value={tagFilter}
@@ -217,7 +215,7 @@ const DiscussionForum = () => {
           </div>
         </div>
 
-        {/* Create Discussion Form */}
+
         {showForm && (
           <div
             className="backdrop-blur-xl border rounded-2xl shadow-lg p-8 mb-8 transform animate-in slide-in-from-top duration-300"
@@ -362,7 +360,7 @@ const DiscussionForum = () => {
           </div>
         )}
 
-        {/* Discussions Table */}
+
         <div
           className="backdrop-blur-xl border rounded-2xl shadow-lg overflow-hidden"
           style={{
@@ -371,7 +369,7 @@ const DiscussionForum = () => {
             boxShadow: "0 20px 25px -5px rgba(45, 80, 22, 0.1), 0 10px 10px -5px rgba(45, 80, 22, 0.04)",
           }}
         >
-          {/* Table Header */}
+
           <div className="px-8 py-6 border-b" style={{ borderColor: "rgba(132, 169, 140, 0.2)" }}>
             <h2 className="text-xl font-bold" style={{ color: "#2d5016" }}>
               Recent Discussions
@@ -381,7 +379,7 @@ const DiscussionForum = () => {
             </p>
           </div>
 
-          {/* Desktop Table */}
+
           <div className="hidden md:block">
             <table className="w-full">
               <thead style={{ backgroundColor: "rgba(132, 169, 140, 0.1)" }}>
@@ -464,7 +462,7 @@ const DiscussionForum = () => {
             </table>
           </div>
 
-          {/* Mobile Cards */}
+
           <div className="md:hidden divide-y" style={{ borderColor: "rgba(132, 169, 140, 0.1)" }}>
             {filteredDiscussions.map((disc) => (
               <div
@@ -508,7 +506,7 @@ const DiscussionForum = () => {
             ))}
           </div>
 
-          {/* Empty State */}
+
           {filteredDiscussions.length === 0 && (
             <div className="text-center py-16">
               <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: "rgba(132, 169, 140, 0.1)" }}>

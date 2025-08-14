@@ -1,4 +1,4 @@
-// src/components/ForgotPasswordPage.jsx
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -26,7 +26,6 @@ function ForgotPasswordPage() {
         throw new Error(data.message || "Failed to send reset link.");
       }
 
-      // On success, we just show the message from the backend.
       setMessage(data.message);
     } catch (err) {
       setError(err.message);
@@ -37,14 +36,14 @@ function ForgotPasswordPage() {
 
   return (
     <div className="flex items-center justify-center bg-gradient-to-br from-green-50 via-stone-50 to-amber-50 -m-4 md:-m-8 relative overflow-hidden" style={{ minHeight: "calc(100vh - 120px)" }}>
-      {/* Decorative Background Blobs */}
+
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-green-200/20 to-amber-200/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-amber-200/20 to-stone-200/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-stone-200/10 to-green-200/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
 
-      {/* Main Form Card */}
+
       <div className="w-full max-w-md backdrop-blur-xl border rounded-3xl shadow-2xl p-8 space-y-6 relative z-10 transition-all duration-300" style={{ backgroundColor: "rgba(254, 252, 247, 0.9)", borderColor: "rgba(132, 169, 140, 0.3)", boxShadow: "0 25px 50px -12px rgba(82, 121, 111, 0.15)" }}>
         <div className="text-center space-y-2">
           <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, #84a98c, #52796f)", boxShadow: "0 10px 25px -5px rgba(82, 121, 111, 0.3)" }}>

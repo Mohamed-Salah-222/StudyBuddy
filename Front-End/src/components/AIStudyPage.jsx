@@ -1,11 +1,11 @@
 import { useState } from "react";
 
-// AI Message Formatter Component
+
 function AIFormattedMessage({ text }) {
   const formatAIMessage = (text) => {
-    // Handle text wrapped in *asterisks* for bold
+
     const processBoldText = (str) => {
-      // Match text between asterisks
+
       return str.split(/(\*[^*]+\*)/).map((part, index) => {
         if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
           const boldText = part.slice(1, -1);
@@ -19,16 +19,16 @@ function AIFormattedMessage({ text }) {
       });
     };
 
-    // Split by lines and process each line
+
     const lines = text.split("\n").filter((line) => line.trim() !== "");
 
     return lines.map((line, index) => {
       const trimmedLine = line.trim();
 
-      // Skip empty lines
+
       if (!trimmedLine) return null;
 
-      // Headers (lines that end with : and are typically short)
+
       if (trimmedLine.endsWith(":") && trimmedLine.length < 60 && !trimmedLine.includes("?")) {
         return (
           <div key={index} className="mb-4 mt-5 first:mt-0">
@@ -39,7 +39,6 @@ function AIFormattedMessage({ text }) {
         );
       }
 
-      // Numbered lists (1. 2. 3. etc.)
       const numberedMatch = trimmedLine.match(/^(\d+\.)\s+(.+)/);
       if (numberedMatch) {
         return (
@@ -52,7 +51,7 @@ function AIFormattedMessage({ text }) {
         );
       }
 
-      // Bullet points (- or • or *)
+
       const bulletMatch = trimmedLine.match(/^[-•*]\s+(.+)/);
       if (bulletMatch) {
         return (
@@ -63,7 +62,6 @@ function AIFormattedMessage({ text }) {
         );
       }
 
-      // Questions (end with ?)
       if (trimmedLine.endsWith("?")) {
         return (
           <div
@@ -82,7 +80,7 @@ function AIFormattedMessage({ text }) {
         );
       }
 
-      // Code-like content (contains common programming keywords or symbols)
+
       if (trimmedLine.includes("()") || trimmedLine.includes("{}") || trimmedLine.includes("function") || trimmedLine.includes("const ") || trimmedLine.includes("import ") || trimmedLine.includes("</") || trimmedLine.includes("```")) {
         return (
           <div
@@ -102,7 +100,6 @@ function AIFormattedMessage({ text }) {
         );
       }
 
-      // Important notes or tips (lines starting with "Note:" "Tip:" "Remember:" etc.)
       const noteMatch = trimmedLine.match(/^(Note|Tip|Remember|Important|Warning|Alert):\s*(.+)/i);
       if (noteMatch) {
         const noteType = noteMatch[1].toLowerCase();
@@ -138,7 +135,6 @@ function AIFormattedMessage({ text }) {
         );
       }
 
-      // Regular paragraphs
       return (
         <div key={index} className="mb-4 leading-relaxed">
           <span className="text-sm">{processBoldText(trimmedLine)}</span>
@@ -155,7 +151,7 @@ export default function AIStudyPage() {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Call your backend API
+
   const getAIResponse = async (userMessage) => {
     try {
       const chatHistory = messages.map((msg) => ({
@@ -232,7 +228,7 @@ export default function AIStudyPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100">
       <div className="max-w-5xl mx-auto h-screen flex flex-col">
-        {/* Enhanced Header with subtle pattern */}
+
         <div className="relative overflow-hidden">
           <div
             className="absolute inset-0 opacity-10"
@@ -257,7 +253,6 @@ export default function AIStudyPage() {
           </div>
         </div>
 
-        {/* Enhanced Chat Container */}
         <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6" style={{ backgroundColor: "#fefcf7" }}>
           {messages.map((message) => (
             <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"} animate-fadeIn`}>
@@ -316,7 +311,6 @@ export default function AIStudyPage() {
           )}
         </div>
 
-        {/* Enhanced Input Area */}
         <div
           className="px-8 py-6 border-t-2 border-opacity-20 backdrop-blur-sm"
           style={{
