@@ -39,8 +39,6 @@ webPush.setVapidDetails(vapidSubject, publicVapidKey, privateVapidKey);
 app.use(cors());
 app.use(express.json());
 app.use(passport.initialize());
-console.log("HF API Key:", process.env.HUGGINGFACE_API_KEY ? "LOADED" : "NOT LOADED");
-console.log("First 10 characters:", process.env.HUGGINGFACE_API_KEY?.substring(0, 10));
 //*-----------------------------------------------------------------------------------APIs-----------------------------------------------------------------------------------
 //^------------------------------------------------------------------------------POST REQUESTS-------------------------------------------------------------------------------
 //*------------------------------------------------------------------------------Register API--------------------------------------------------------------------------------
@@ -736,7 +734,6 @@ app.patch("/api/reminder/:id", authMiddleware, async (req, res) => {
         const now = new Date();
         if (new Date(dueDateTime) > now && !updatedReminder.notified) {
           await jobManager.scheduleReminder(updatedReminder._id, new Date(dueDateTime));
-          console.log(`📅 Rescheduled job for reminder: ${updatedReminder.title}`);
         }
       } catch (error) {
         console.error("⚠️ Error rescheduling reminder job:", error);
