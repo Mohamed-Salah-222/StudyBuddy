@@ -255,7 +255,6 @@ const StudyResourceCollector = () => {
         return;
       }
 
-
       setResources((prevResources) => prevResources.filter((r) => r._id !== resourceToDelete._id));
       showNotification("Resource deleted successfully!", "success");
 
@@ -298,65 +297,38 @@ const StudyResourceCollector = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#fefcf7" }}>
+    <div className="min-h-screen bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
-
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: "#2d5016" }}>
-            Study Resources
-          </h1>
-          <p className="text-gray-600">Collect and organize your study materials for easy access</p>
+          <h1 className="text-3xl font-bold mb-2 text-gray-800">Study Resources</h1>
+          <p className="text-gray-600 font-semibold">Collect and organize your study materials for easy access</p>
         </div>
 
-
         {!getAuthToken() && (
-          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-yellow-800 mb-3">No authentication token found. Please enter your token:</p>
+          <div className="mb-6 p-5 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)]">
+            <p className="text-gray-800 mb-3 font-semibold">No authentication token found. Please enter your token:</p>
             <div className="flex gap-2">
-              <input
-                type="password"
-                placeholder="Enter your authentication token"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                style={{
-                  backgroundColor: "#f8f6f0",
-                  focusRingColor: "#84a98c",
-                }}
-              />
-              <button onClick={fetchResources} className="px-4 py-2 text-white rounded-lg font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: "#52796f" }}>
+              <input type="password" placeholder="Enter your authentication token" value={token} onChange={(e) => setToken(e.target.value)} className="flex-1 px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500" />
+              <button onClick={fetchResources} className="px-4 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold hover:bg-gray-800 hover:text-white transition-all duration-250">
                 Load Resources
               </button>
             </div>
           </div>
         )}
 
-
         <div className="mb-6 space-y-4">
           <div className="flex flex-wrap gap-4 items-center justify-between">
             <div className="flex gap-4 items-center">
-              <button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2 text-white rounded-lg font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: "#52796f" }}>
+              <button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold hover:bg-gray-800 hover:text-white transition-all duration-250">
                 <Plus size={20} />
                 Add Resource
               </button>
 
               <div className="flex gap-2">
-                <button
-                  onClick={() => setViewMode("cards")}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === "cards" ? "text-white" : "text-gray-600 hover:text-gray-800"}`}
-                  style={{
-                    backgroundColor: viewMode === "cards" ? "#84a98c" : "transparent",
-                  }}
-                >
+                <button onClick={() => setViewMode("cards")} className={`px-3 py-2 border-2 border-gray-800 rounded font-semibold transition-all duration-250 ${viewMode === "cards" ? "bg-gray-800 text-white shadow-[4px_4px_0px_0px_theme(colors.gray.600)]" : "bg-white text-gray-800 shadow-[4px_4px_0px_0px_theme(colors.gray.800)] hover:bg-gray-800 hover:text-white"}`}>
                   Cards
                 </button>
-                <button
-                  onClick={() => setViewMode("table")}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === "table" ? "text-white" : "text-gray-600 hover:text-gray-800"}`}
-                  style={{
-                    backgroundColor: viewMode === "table" ? "#84a98c" : "transparent",
-                  }}
-                >
+                <button onClick={() => setViewMode("table")} className={`px-3 py-2 border-2 border-gray-800 rounded font-semibold transition-all duration-250 ${viewMode === "table" ? "bg-gray-800 text-white shadow-[4px_4px_0px_0px_theme(colors.gray.600)]" : "bg-white text-gray-800 shadow-[4px_4px_0px_0px_theme(colors.gray.800)] hover:bg-gray-800 hover:text-white"}`}>
                   Table
                 </button>
               </div>
@@ -364,29 +336,11 @@ const StudyResourceCollector = () => {
 
             <div className="flex gap-4 items-center">
               <div className="relative">
-                <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search resources..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                  style={{
-                    backgroundColor: "#f8f6f0",
-                    focusRingColor: "#84a98c",
-                  }}
-                />
+                <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600" />
+                <input type="text" placeholder="Search resources..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500" />
               </div>
 
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                style={{
-                  backgroundColor: "#f8f6f0",
-                  focusRingColor: "#84a98c",
-                }}
-              >
+              <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500">
                 <option value="all">All Types</option>
                 <option value="Links">Links</option>
                 <option value="video">Videos</option>
@@ -395,92 +349,35 @@ const StudyResourceCollector = () => {
                 <option value="other">Other</option>
               </select>
 
-              <input
-                type="text"
-                placeholder="Filter by tag..."
-                value={filterTag}
-                onChange={(e) => setFilterTag(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                style={{
-                  backgroundColor: "#f8f6f0",
-                  focusRingColor: "#84a98c",
-                }}
-              />
+              <input type="text" placeholder="Filter by tag..." value={filterTag} onChange={(e) => setFilterTag(e.target.value)} className="px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500" />
             </div>
           </div>
         </div>
 
         {showAddForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-              <h2 className="text-xl font-bold mb-4" style={{ color: "#2d5016" }}>
-                Add New Resource
-              </h2>
+            <div className="bg-gray-300 border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-bold mb-4 text-gray-800">Add New Resource</h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                    style={{
-                      backgroundColor: "#f8f6f0",
-                      focusRingColor: "#84a98c",
-                    }}
-                  />
+                  <label className="block text-sm font-semibold mb-1 text-gray-800">Title *</label>
+                  <input type="text" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
-                    URL *
-                  </label>
-                  <input
-                    type="url"
-                    required
-                    value={formData.url}
-                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                    style={{
-                      backgroundColor: "#f8f6f0",
-                      focusRingColor: "#84a98c",
-                    }}
-                  />
+                  <label className="block text-sm font-semibold mb-1 text-gray-800">URL *</label>
+                  <input type="url" required value={formData.url} onChange={(e) => setFormData({ ...formData, url: e.target.value })} className="w-full px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                    style={{
-                      backgroundColor: "#f8f6f0",
-                      focusRingColor: "#84a98c",
-                    }}
-                  />
+                  <label className="block text-sm font-semibold mb-1 text-gray-800">Description</label>
+                  <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} className="w-full px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
-                    Type
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                    style={{
-                      backgroundColor: "#f8f6f0",
-                      focusRingColor: "#84a98c",
-                    }}
-                  >
+                  <label className="block text-sm font-semibold mb-1 text-gray-800">Type</label>
+                  <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className="w-full px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500">
                     <option value="link">link</option>
                     <option value="video">video</option>
                     <option value="image">image</option>
@@ -490,27 +387,21 @@ const StudyResourceCollector = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
-                    Tags (comma-separated)
-                  </label>
+                  <label className="block text-sm font-semibold mb-1 text-gray-800">Tags (comma-separated)</label>
                   <input
                     type="text"
                     value={formData.tags}
                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                     placeholder="e.g. react, javascript, tutorial"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                    style={{
-                      backgroundColor: "#f8f6f0",
-                      focusRingColor: "#84a98c",
-                    }}
+                    className="w-full px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500"
                   />
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={handleSubmit} disabled={loading} className="flex-1 py-2 px-4 text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50" style={{ backgroundColor: "#52796f" }}>
+                  <button type="button" onClick={handleSubmit} disabled={loading} className="flex-1 py-2 px-4 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold hover:bg-gray-800 hover:text-white transition-all duration-250 disabled:opacity-50">
                     {loading ? "Adding..." : "Add Resource"}
                   </button>
-                  <button type="button" onClick={() => setShowAddForm(false)} className="flex-1 py-2 px-4 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors" style={{ color: "#6b7280" }}>
+                  <button type="button" onClick={() => setShowAddForm(false)} className="flex-1 py-2 px-4 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-600 font-semibold hover:bg-gray-800 hover:text-white transition-all duration-250">
                     Cancel
                   </button>
                 </div>
@@ -519,72 +410,59 @@ const StudyResourceCollector = () => {
           </div>
         )}
 
-
         <DeleteConfirmationModal isOpen={showDeleteModal} onClose={handleCancelDelete} onConfirm={handleConfirmDelete} resourceTitle={resourceToDelete?.title || ""} loading={deleteLoading} />
 
-
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700">{error}</p>
-            <button onClick={fetchResources} className="mt-2 text-sm text-red-600 hover:text-red-800 underline">
+          <div className="mb-6 p-4 bg-white border-2 border-red-600 rounded shadow-[4px_4px_0px_0px_theme(colors.red.600)]">
+            <p className="text-red-600 font-semibold">{error}</p>
+            <button onClick={fetchResources} className="mt-2 text-sm text-red-600 hover:text-red-800 underline font-semibold">
               Try again
             </button>
           </div>
         )}
 
-
         {loading && resources.length === 0 ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: "#84a98c" }}></div>
-            <p className="text-gray-500 text-lg">Loading resources...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-gray-800 mx-auto mb-4"></div>
+            <p className="text-gray-600 text-lg font-semibold">Loading resources...</p>
           </div>
         ) : filteredResources.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No resources found</p>
-            <p className="text-gray-400 mt-2">{resources.length === 0 ? "Start by adding your first study resource!" : "Try adjusting your search or filters"}</p>
+            <p className="text-gray-600 text-lg font-semibold">No resources found</p>
+            <p className="text-gray-500 mt-2 font-medium">{resources.length === 0 ? "Start by adding your first study resource!" : "Try adjusting your search or filters"}</p>
           </div>
         ) : viewMode === "cards" ? (
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredResources.map((resource) => (
-              <div key={resource._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow" style={{ backgroundColor: "#f8f6f0" }}>
+              <div key={resource._id} className="bg-gray-300 border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] p-5 hover:shadow-[6px_6px_0px_0px_theme(colors.gray.800)] transition-all duration-250">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     {getTypeIcon(resource.type)}
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(resource.type)}`}>{resource.type}</span>
+                    <span className={`px-2 py-1 border-2 border-gray-800 rounded text-xs font-semibold shadow-[2px_2px_0px_0px_theme(colors.gray.800)] ${getTypeColor(resource.type)}`}>{resource.type}</span>
                   </div>
-                  <button onClick={() => handleDeleteClick(resource)} className="text-gray-400 hover:text-red-500 transition-colors">
+                  <button onClick={() => handleDeleteClick(resource)} className="text-gray-600 hover:text-red-500 transition-colors">
                     <Trash2 size={16} />
                   </button>
                 </div>
 
-                <h3 className="font-semibold text-lg mb-2 line-clamp-2" style={{ color: "#2d5016" }}>
-                  {resource.title}
-                </h3>
+                <h3 className="font-bold text-lg mb-2 line-clamp-2 text-gray-800">{resource.title}</h3>
 
-                {resource.description && <p className="text-gray-600 text-sm mb-3 line-clamp-3">{resource.description}</p>}
+                {resource.description && <p className="text-gray-600 text-sm mb-3 line-clamp-3 font-medium">{resource.description}</p>}
 
                 <div className="flex flex-wrap gap-1 mb-3">
                   {resource.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 text-xs rounded-full"
-                      style={{
-                        backgroundColor: "#d4a574",
-                        color: "#2d5016",
-                      }}
-                    >
+                    <span key={index} className="px-2 py-1 text-xs border-2 border-gray-800 rounded shadow-[2px_2px_0px_0px_theme(colors.gray.800)] bg-gray-200 text-gray-800 font-semibold">
                       {tag}
                     </span>
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                <div className="flex items-center justify-between pt-3 border-t-2 border-gray-800">
+                  <div className="flex items-center gap-1 text-xs text-gray-600 font-medium">
                     <Calendar size={12} />
                     {formatDate(resource.createdAt)}
                   </div>
-                  <a href={resource.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-medium hover:underline" style={{ color: "#52796f" }}>
+                  <a href={resource.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-semibold hover:underline text-gray-800">
                     Visit <ExternalLink size={12} />
                   </a>
                 </div>
@@ -592,59 +470,49 @@ const StudyResourceCollector = () => {
             ))}
           </div>
         ) : (
-
           <div className="overflow-x-auto">
-            <table className="w-full border border-gray-200 rounded-lg overflow-hidden" style={{ backgroundColor: "#f8f6f0" }}>
-              <thead style={{ backgroundColor: "#84a98c" }}>
+            <table className="w-full bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] overflow-hidden">
+              <thead className="bg-gray-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Resource</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Tags</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Date Added</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Resource</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Tags</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Date Added</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y-2 divide-gray-800">
                 {filteredResources.map((resource) => (
-                  <tr key={resource._id} className="hover:bg-gray-50">
+                  <tr key={resource._id} className="hover:bg-gray-100 bg-gray-300">
                     <td className="px-6 py-4">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           {getTypeIcon(resource.type)}
-                          <h4 className="font-medium" style={{ color: "#2d5016" }}>
-                            {resource.title}
-                          </h4>
+                          <h4 className="font-semibold text-gray-800">{resource.title}</h4>
                         </div>
-                        {resource.description && <p className="text-sm text-gray-600 line-clamp-2">{resource.description}</p>}
+                        {resource.description && <p className="text-sm text-gray-600 line-clamp-2 font-medium">{resource.description}</p>}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(resource.type)}`}>{resource.type}</span>
+                      <span className={`px-2 py-1 border-2 border-gray-800 rounded text-xs font-semibold shadow-[2px_2px_0px_0px_theme(colors.gray.800)] ${getTypeColor(resource.type)}`}>{resource.type}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
                         {resource.tags.slice(0, 3).map((tag, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 text-xs rounded-full"
-                            style={{
-                              backgroundColor: "#d4a574",
-                              color: "#2d5016",
-                            }}
-                          >
+                          <span key={index} className="px-2 py-1 text-xs border-2 border-gray-800 rounded shadow-[2px_2px_0px_0px_theme(colors.gray.800)] bg-gray-200 text-gray-800 font-semibold">
                             {tag}
                           </span>
                         ))}
-                        {resource.tags.length > 3 && <span className="text-xs text-gray-500">+{resource.tags.length - 3} more</span>}
+                        {resource.tags.length > 3 && <span className="text-xs text-gray-600 font-medium">+{resource.tags.length - 3} more</span>}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{formatDate(resource.createdAt)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">{formatDate(resource.createdAt)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline" style={{ color: "#52796f" }}>
+                        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold hover:underline text-gray-800">
                           <ExternalLink size={16} />
                         </a>
-                        <button onClick={() => handleDeleteClick(resource)} className="text-gray-400 hover:text-red-500 transition-colors">
+                        <button onClick={() => handleDeleteClick(resource)} className="text-gray-600 hover:text-red-500 transition-colors">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -656,8 +524,7 @@ const StudyResourceCollector = () => {
           </div>
         )}
 
- 
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-sm text-gray-600 font-medium">
           Showing {filteredResources.length} of {resources.length} resources
         </div>
       </div>

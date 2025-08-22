@@ -1,11 +1,8 @@
 import { useState } from "react";
 
-
 function AIFormattedMessage({ text }) {
   const formatAIMessage = (text) => {
-
     const processBoldText = (str) => {
-
       return str.split(/(\*[^*]+\*)/).map((part, index) => {
         if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
           const boldText = part.slice(1, -1);
@@ -19,15 +16,12 @@ function AIFormattedMessage({ text }) {
       });
     };
 
-
     const lines = text.split("\n").filter((line) => line.trim() !== "");
 
     return lines.map((line, index) => {
       const trimmedLine = line.trim();
 
-
       if (!trimmedLine) return null;
-
 
       if (trimmedLine.endsWith(":") && trimmedLine.length < 60 && !trimmedLine.includes("?")) {
         return (
@@ -50,7 +44,6 @@ function AIFormattedMessage({ text }) {
           </div>
         );
       }
-
 
       const bulletMatch = trimmedLine.match(/^[-•*]\s+(.+)/);
       if (bulletMatch) {
@@ -79,7 +72,6 @@ function AIFormattedMessage({ text }) {
           </div>
         );
       }
-
 
       if (trimmedLine.includes("()") || trimmedLine.includes("{}") || trimmedLine.includes("function") || trimmedLine.includes("const ") || trimmedLine.includes("import ") || trimmedLine.includes("</") || trimmedLine.includes("```")) {
         return (
@@ -150,7 +142,6 @@ export default function AIStudyPage() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
 
   const getAIResponse = async (userMessage) => {
     try {
@@ -226,81 +217,68 @@ export default function AIStudyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100">
+    <div className="min-h-screen bg-gray-100">
       <div className="max-w-5xl mx-auto h-screen flex flex-col">
-
-        <div className="relative overflow-hidden">
-          <div
-            className="absolute inset-0 opacity-10"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.3'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}
-          />
-          <div
-            className="relative px-8 py-6 text-white shadow-xl"
-            style={{
-              background: `linear-gradient(135deg, #52796f 0%, #84a98c 50%, #52796f 100%)`,
-            }}
-          >
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl shadow-lg">🤖</div>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight">AI Study Buddy</h1>
-                <p className="text-white/90 text-lg font-medium">Your personal learning companion</p>
-              </div>
+        {/* Header */}
+        <div className="px-8 py-6 bg-gray-300 border-2 border-gray-800 text-gray-800" style={{ boxShadow: "4px 4px #323232" }}>
+          <div className="flex items-center space-x-3 mb-2">
+            <div className="w-12 h-12 bg-gray-800 border-2 border-gray-800 flex items-center justify-center text-2xl text-white" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
+              🤖
             </div>
-            <p className="text-white/80 max-w-2xl leading-relaxed">Ask me anything about studying, learning techniques, or specific subjects. Let's make learning enjoyable together!</p>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800" style={{ fontFamily: "var(--font-DelaGothicOne)" }}>
+                AI Study Buddy
+              </h1>
+              <p className="text-gray-600 text-lg font-semibold" style={{ fontFamily: "var(--font-SpaceMono)" }}>
+                Your personal learning companion
+              </p>
+            </div>
           </div>
+          <p className="text-gray-600 font-semibold max-w-2xl">Ask me anything about studying, learning techniques, or specific subjects. Let's make learning enjoyable together!</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6" style={{ backgroundColor: "#fefcf7" }}>
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 bg-gray-100">
           {messages.map((message) => (
-            <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"} animate-fadeIn`}>
+            <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-md lg:max-w-lg px-6 py-4 rounded-2xl shadow-sm transition-all duration-200 hover:shadow-md ${message.sender === "user" ? "rounded-br-md" : "rounded-bl-md border-2 border-opacity-20"}`}
+                className={`max-w-md lg:max-w-lg px-6 py-4 border-2 border-gray-800 font-semibold ${message.sender === "user" ? "bg-white text-gray-800" : "bg-gray-300 text-gray-800"}`}
                 style={{
-                  backgroundColor: message.sender === "user" ? "#52796f" : "#f8f6f0",
-                  color: message.sender === "user" ? "white" : "#2d5016",
-                  borderColor: message.sender === "ai" ? "#84a98c" : "transparent",
+                  boxShadow: "4px 4px #323232",
+                  borderRadius: "5px",
                 }}
               >
                 <div className="flex items-start space-x-3">
                   {message.sender === "ai" && (
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-sm mt-1" style={{ backgroundColor: "#84a98c", color: "white" }}>
+                    <div className="w-8 h-8 bg-gray-800 border-2 border-gray-800 flex items-center justify-center text-lg text-white mt-1" style={{ boxShadow: "1px 1px #323232", borderRadius: "5px" }}>
                       🤖
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm leading-relaxed font-medium">{message.sender === "ai" ? <AIFormattedMessage text={message.text} /> : <span className="whitespace-pre-wrap">{message.text}</span>}</div>
-                    <p
-                      className={`text-xs mt-3 font-medium ${message.sender === "user" ? "text-white/70" : ""}`}
-                      style={{
-                        color: message.sender === "user" ? "rgba(255,255,255,0.7)" : "#6b7280",
-                      }}
-                    >
-                      {message.timestamp}
-                    </p>
+                    <div className="text-sm leading-relaxed">{message.sender === "ai" ? <AIFormattedMessage text={message.text} /> : <span className="whitespace-pre-wrap">{message.text}</span>}</div>
+                    <p className="text-xs mt-3 font-semibold text-gray-600">{message.timestamp}</p>
                   </div>
                 </div>
               </div>
             </div>
           ))}
 
+          {/* Loading State */}
           {isLoading && (
-            <div className="flex justify-start animate-fadeIn">
-              <div className="px-6 py-4 rounded-2xl rounded-bl-md shadow-sm border-2 border-opacity-20 max-w-xs" style={{ backgroundColor: "#f8f6f0", borderColor: "#84a98c" }}>
+            <div className="flex justify-start">
+              <div className="px-6 py-4 bg-gray-300 border-2 border-gray-800 max-w-xs" style={{ boxShadow: "4px 4px #323232", borderRadius: "5px" }}>
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-sm" style={{ backgroundColor: "#84a98c", color: "white" }}>
+                  <div className="w-8 h-8 bg-gray-800 border-2 border-gray-800 flex items-center justify-center text-lg text-white" style={{ boxShadow: "1px 1px #323232", borderRadius: "5px" }}>
                     🤖
                   </div>
                   <div className="flex space-x-1">
                     {[0, 1, 2].map((i) => (
                       <div
                         key={i}
-                        className="w-2.5 h-2.5 rounded-full animate-bounce"
+                        className="w-2.5 h-2.5 bg-gray-800"
                         style={{
-                          backgroundColor: "#84a98c",
-                          animationDelay: `${i * 0.15}s`,
+                          borderRadius: "5px",
+                          animation: `bounce 1.4s ease-in-out ${i * 0.16}s infinite both`,
                         }}
                       />
                     ))}
@@ -311,13 +289,8 @@ export default function AIStudyPage() {
           )}
         </div>
 
-        <div
-          className="px-8 py-6 border-t-2 border-opacity-20 backdrop-blur-sm"
-          style={{
-            backgroundColor: "#fefcf7",
-            borderColor: "#84a98c",
-          }}
-        >
+        {/* Input Area */}
+        <div className="px-8 py-6 bg-gray-300 border-t-2 border-gray-800" style={{ boxShadow: "0 -2px #323232" }}>
           <div className="flex space-x-4 max-w-4xl mx-auto">
             <div className="flex-1 relative">
               <textarea
@@ -325,32 +298,47 @@ export default function AIStudyPage() {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask your AI study buddy anything..."
-                className="w-full border-2 border-opacity-30 rounded-2xl px-6 py-4 resize-none focus:outline-none focus:ring-4 focus:ring-opacity-20 transition-all duration-200 font-medium placeholder-opacity-60 shadow-sm hover:shadow-md"
+                className="w-full border-2 border-gray-800 px-6 py-4 resize-none bg-white text-gray-800 font-semibold placeholder-gray-600"
                 style={{
-                  backgroundColor: "#f8f6f0",
-                  borderColor: "#84a98c",
-                  color: "#2d5016",
-                  focusRingColor: "#52796f",
+                  boxShadow: "2px 2px #323232",
+                  borderRadius: "5px",
+                  outline: "none",
                 }}
                 rows="2"
                 disabled={isLoading}
               />
-              <div className="absolute bottom-2 right-2 text-xs font-medium opacity-50" style={{ color: "#6b7280" }}>
-                Press Enter to send
-              </div>
+              <div className="absolute bottom-2 right-2 text-xs font-semibold text-gray-600">Press Enter to send</div>
             </div>
             <button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
-              className={`px-8 py-4 rounded-2xl font-bold transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 disabled:transform-none disabled:hover:shadow-sm ${!inputMessage.trim() || isLoading ? "cursor-not-allowed opacity-50" : "hover:-translate-y-0.5"}`}
+              className={`px-8 py-4 font-bold transition-all duration-200 border-2 border-gray-800 ${!inputMessage.trim() || isLoading ? "bg-gray-400 text-gray-600 cursor-not-allowed" : "bg-white text-gray-800 hover:bg-gray-100"}`}
               style={{
-                backgroundColor: !inputMessage.trim() || isLoading ? "#6b7280" : "#52796f",
-                color: "white",
+                boxShadow: "2px 2px #323232",
+                borderRadius: "5px",
+              }}
+              onMouseEnter={(e) => {
+                if (!(!inputMessage.trim() || isLoading)) {
+                  e.target.style.transform = "translate(-1px, -1px)";
+                  e.target.style.boxShadow = "3px 3px #323232";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!(!inputMessage.trim() || isLoading)) {
+                  e.target.style.transform = "translate(0, 0)";
+                  e.target.style.boxShadow = "2px 2px #323232";
+                }
               }}
             >
               {isLoading ? (
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <div
+                    className="w-4 h-4 bg-gray-800"
+                    style={{
+                      borderRadius: "5px",
+                      animation: "spin 1s linear infinite",
+                    }}
+                  />
                   <span>Thinking...</span>
                 </div>
               ) : (
@@ -365,24 +353,34 @@ export default function AIStudyPage() {
       </div>
 
       <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
+        @keyframes bounce {
+          0%,
+          80%,
+          100% {
+            transform: scale(0);
           }
-          to {
-            opacity: 1;
-            transform: translateY(0);
+          40% {
+            transform: scale(1);
           }
         }
 
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
 
         textarea:focus {
-          ring-color: #52796f !important;
-          border-color: #52796f !important;
+          border-color: #2d8cf0 !important;
+          box-shadow: 2px 2px #323232, 0 0 0 2px #2d8cf0 !important;
+        }
+
+        button:active:not(:disabled) {
+          transform: translate(1px, 1px) !important;
+          box-shadow: 1px 1px #323232 !important;
         }
       `}</style>
     </div>

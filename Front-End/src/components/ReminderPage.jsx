@@ -7,12 +7,9 @@ const DateTimePicker = ({ value, onChange, label, required = false }) => {
 
   useEffect(() => {
     if (value) {
-
       const dateObj = new Date(value);
 
-
       const dateStr = dateObj.getFullYear() + "-" + String(dateObj.getMonth() + 1).padStart(2, "0") + "-" + String(dateObj.getDate()).padStart(2, "0");
-
 
       const timeStr = String(dateObj.getHours()).padStart(2, "0") + ":" + String(dateObj.getMinutes()).padStart(2, "0");
 
@@ -24,10 +21,8 @@ const DateTimePicker = ({ value, onChange, label, required = false }) => {
   const createDateTime = (dateValue, timeValue) => {
     if (!dateValue || !timeValue) return null;
 
- 
     const [year, month, day] = dateValue.split("-").map(Number);
     const [hours, minutes] = timeValue.split(":").map(Number);
-
 
     const dateObj = new Date(year, month - 1, day, hours, minutes);
 
@@ -52,40 +47,17 @@ const DateTimePicker = ({ value, onChange, label, required = false }) => {
 
   return (
     <div className="mb-4">
-      <label className="block text-sm font-medium mb-2" style={{ color: "#2d5016" }}>
+      <label className="block text-sm font-semibold mb-2 text-gray-800">
         {label} {required && "*"}
       </label>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
-            Date
-          </label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => handleDateChange(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-            style={{
-              borderColor: "#84a98c",
-              focusRingColor: "#52796f",
-            }}
-            min={new Date().toISOString().split("T")[0]}
-          />
+          <label className="block text-xs font-semibold mb-1 text-gray-600">Date</label>
+          <input type="date" value={date} onChange={(e) => handleDateChange(e.target.value)} className="w-full px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500" min={new Date().toISOString().split("T")[0]} />
         </div>
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
-            Time
-          </label>
-          <input
-            type="time"
-            value={time}
-            onChange={(e) => handleTimeChange(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-            style={{
-              borderColor: "#84a98c",
-              focusRingColor: "#52796f",
-            }}
-          />
+          <label className="block text-xs font-semibold mb-1 text-gray-600">Time</label>
+          <input type="time" value={time} onChange={(e) => handleTimeChange(e.target.value)} className="w-full px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500" />
         </div>
       </div>
     </div>
@@ -155,7 +127,6 @@ const ReminderPage = () => {
 
   const createReminder = async (reminderData) => {
     try {
-
       const apiData = {
         title: reminderData.title,
         dueDateTime: reminderData.reminderTime,
@@ -189,7 +160,6 @@ const ReminderPage = () => {
 
   const updateReminder = async (id, reminderData) => {
     try {
-
       const apiData = {
         title: reminderData.title,
         dueDateTime: reminderData.reminderTime,
@@ -262,7 +232,7 @@ const ReminderPage = () => {
   const startEdit = (reminder) => {
     setFormData({
       title: reminder.title,
-      reminderTime: reminder.dueDateTime || reminder.reminderTime, 
+      reminderTime: reminder.dueDateTime || reminder.reminderTime,
       type: reminder.type,
     });
     setEditingId(reminder._id);
@@ -313,68 +283,52 @@ const ReminderPage = () => {
   useEffect(() => {
     fetchReminders();
 
-
-    const interval = setInterval(fetchReminders, 30000); 
+    const interval = setInterval(fetchReminders, 30000);
 
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#fefcf7" }}>
+    <div className="min-h-screen bg-gray-100">
       <div className="max-w-4xl mx-auto p-6">
-
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold" style={{ color: "#2d5016" }}>
-              My Reminders
-            </h1>
-            <p className="mt-2" style={{ color: "#6b7280" }}>
-              Stay organized with your personal reminder system
-            </p>
+            <h1 className="text-3xl font-bold text-gray-800">My Reminders</h1>
+            <p className="mt-2 text-gray-600 font-medium">Stay organized with your personal reminder system</p>
           </div>
-          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-colors hover:opacity-90" style={{ backgroundColor: "#52796f" }}>
+          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold hover:bg-gray-800 hover:text-white transition-all duration-250">
             <Plus className="w-4 h-4" />
             New Reminder
           </button>
         </div>
 
-
         {error && (
-          <div className="mb-6 p-4 rounded-lg border border-red-200" style={{ backgroundColor: "#fef2f2" }}>
+          <div className="mb-6 p-4 bg-white border-2 border-red-600 rounded shadow-[4px_4px_0px_0px_theme(colors.red.600)]">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-500" />
-              <span className="text-red-700">{error}</span>
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <span className="text-red-700 font-semibold">{error}</span>
             </div>
           </div>
         )}
 
-
         {showForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="w-full max-w-md rounded-lg shadow-xl" style={{ backgroundColor: "#f8f6f0" }}>
-              <div className="flex justify-between items-center p-6 border-b" style={{ borderColor: "#84a98c" }}>
-                <h2 className="text-xl font-semibold" style={{ color: "#2d5016" }}>
-                  {editingId ? "Edit Reminder" : "Create New Reminder"}
-                </h2>
-                <button onClick={cancelForm} className="p-1 rounded hover:bg-gray-100">
-                  <X className="w-5 h-5" style={{ color: "#6b7280" }} />
+            <div className="w-full max-w-md bg-gray-300 border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)]">
+              <div className="flex justify-between items-center p-6 border-b-2 border-gray-800">
+                <h2 className="text-xl font-bold text-gray-800">{editingId ? "Edit Reminder" : "Create New Reminder"}</h2>
+                <button onClick={cancelForm} className="p-1 rounded hover:bg-gray-400 transition-colors">
+                  <X className="w-5 h-5 text-gray-600" />
                 </button>
               </div>
 
               <div className="p-6">
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2" style={{ color: "#2d5016" }}>
-                    Title *
-                  </label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-800">Title *</label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                    style={{
-                      borderColor: "#84a98c",
-                      focusRingColor: "#52796f",
-                    }}
+                    className="w-full px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500"
                     placeholder="Enter reminder title"
                     onKeyPress={(e) => e.key === "Enter" && handleSubmit(e)}
                   />
@@ -383,18 +337,8 @@ const ReminderPage = () => {
                 <DateTimePicker value={formData.reminderTime} onChange={(value) => setFormData((prev) => ({ ...prev, reminderTime: value }))} label="Due Date & Time" required />
 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium mb-2" style={{ color: "#2d5016" }}>
-                    Type
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                    style={{
-                      borderColor: "#84a98c",
-                      focusRingColor: "#52796f",
-                    }}
-                  >
+                  <label className="block text-sm font-semibold mb-2 text-gray-800">Type</label>
+                  <select value={formData.type} onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))} className="w-full px-3 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold outline-none focus:shadow-[4px_4px_0px_0px_theme(colors.blue.500)] focus:border-blue-500">
                     <option value="general">General</option>
                     <option value="study">Study</option>
                     <option value="task">Task</option>
@@ -404,18 +348,11 @@ const ReminderPage = () => {
                 </div>
 
                 <div className="flex gap-3">
-                  <button onClick={handleSubmit} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-colors hover:opacity-90" style={{ backgroundColor: "#52796f" }}>
+                  <button onClick={handleSubmit} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-800 font-semibold hover:bg-gray-800 hover:text-white transition-all duration-250">
                     <Save className="w-4 h-4" />
                     {editingId ? "Update" : "Create"} Reminder
                   </button>
-                  <button
-                    onClick={cancelForm}
-                    className="px-4 py-2 border rounded-lg font-medium transition-colors hover:bg-gray-50"
-                    style={{
-                      borderColor: "#84a98c",
-                      color: "#6b7280",
-                    }}
-                  >
+                  <button onClick={cancelForm} className="px-4 py-2 bg-white border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] text-gray-600 font-semibold hover:bg-gray-800 hover:text-white transition-all duration-250">
                     Cancel
                   </button>
                 </div>
@@ -424,60 +361,40 @@ const ReminderPage = () => {
           </div>
         )}
 
-
         <div className="space-y-4">
           {loading ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4" style={{ borderColor: "#52796f" }}></div>
-              <p style={{ color: "#6b7280" }}>Loading reminders...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-4 border-gray-800 mx-auto mb-4"></div>
+              <p className="text-gray-600 font-semibold">Loading reminders...</p>
             </div>
           ) : reminders.length === 0 ? (
             <div className="text-center py-12">
-              <Clock className="w-16 h-16 mx-auto mb-4" style={{ color: "#84a98c" }} />
-              <h3 className="text-lg font-medium mb-2" style={{ color: "#2d5016" }}>
-                No reminders yet
-              </h3>
-              <p style={{ color: "#6b7280" }}>Create your first reminder to get started</p>
+              <Clock className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+              <h3 className="text-lg font-semibold mb-2 text-gray-800">No reminders yet</h3>
+              <p className="text-gray-600 font-medium">Create your first reminder to get started</p>
             </div>
           ) : (
             reminders.map((reminder) => (
-              <div
-                key={reminder._id}
-                className="p-6 rounded-lg shadow-sm border transition-shadow hover:shadow-md"
-                style={{
-                  backgroundColor: "#f8f6f0",
-                  borderColor: "#84a98c",
-                }}
-              >
+              <div key={reminder._id} className="p-6 bg-gray-300 border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_theme(colors.gray.800)] hover:shadow-[6px_6px_0px_0px_theme(colors.gray.800)] transition-all duration-250">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-2">
                       {getStatusIcon(reminder)}
-                      <h3 className="text-lg font-medium truncate" style={{ color: "#2d5016" }}>
-                        {reminder.title}
-                      </h3>
-                      <span
-                        className="px-2 py-1 text-xs rounded-full font-medium"
-                        style={{
-                          backgroundColor: "#d4a574",
-                          color: "#2d5016",
-                        }}
-                      >
-                        {reminder.type}
-                      </span>
+                      <h3 className="text-lg font-semibold truncate text-gray-800">{reminder.title}</h3>
+                      <span className="px-2 py-1 text-xs font-semibold border-2 border-gray-800 rounded shadow-[2px_2px_0px_0px_theme(colors.gray.800)] bg-gray-200 text-gray-800">{reminder.type}</span>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm" style={{ color: "#6b7280" }}>
+                    <div className="flex items-center gap-4 text-sm text-gray-600 font-medium">
                       <span>Due: {formatDateTime(reminder.dueDateTime || reminder.reminderTime)}</span>
-                      <span className="font-medium">{getStatusText(reminder)}</span>
+                      <span className="font-semibold">{getStatusText(reminder)}</span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
-                    <button onClick={() => startEdit(reminder)} className="p-2 rounded-lg transition-colors hover:bg-white" style={{ color: "#52796f" }}>
+                    <button onClick={() => startEdit(reminder)} className="p-2 bg-white border-2 border-gray-800 rounded shadow-[2px_2px_0px_0px_theme(colors.gray.800)] text-gray-800 hover:bg-gray-800 hover:text-white transition-all duration-250">
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button onClick={() => deleteReminder(reminder._id)} className="p-2 rounded-lg transition-colors hover:bg-red-50" style={{ color: "#dc2626" }}>
+                    <button onClick={() => deleteReminder(reminder._id)} className="p-2 bg-white border-2 border-red-600 rounded shadow-[2px_2px_0px_0px_theme(colors.red.600)] text-red-600 hover:bg-red-600 hover:text-white transition-all duration-250">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -487,8 +404,7 @@ const ReminderPage = () => {
           )}
         </div>
 
-
-        <div className="mt-12 text-center text-sm" style={{ color: "#6b7280" }}>
+        <div className="mt-12 text-center text-sm text-gray-600 font-medium">
           <p>Reminders refresh automatically every 30 seconds</p>
         </div>
       </div>

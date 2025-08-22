@@ -5,10 +5,8 @@ import { useEffect } from "react";
 function Notification({ onNotificationShow }) {
   const { notification, showNotification } = useNotification();
 
-
   useEffect(() => {
     if (notification && onNotificationShow) {
-
       if (notification.type === "reminder" || notification.isReminder) {
         onNotificationShow({
           title: notification.message,
@@ -68,32 +66,22 @@ function Notification({ onNotificationShow }) {
   return (
     <div className="fixed top-20 right-5 z-[60]">
       <div
-        className="backdrop-blur-xl border rounded-2xl shadow-2xl p-4 text-white font-semibold transition-all duration-500 ease-in-out transform hover:scale-105 animate-notification"
+        className="border-2 border-gray-800 rounded shadow-[4px_4px_0px_0px_#323232] p-4 bg-white text-gray-800 font-semibold transition-all duration-500 ease-in-out transform hover:scale-105 animate-notification"
         style={{
           ...styles,
-          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
           minWidth: "320px",
           maxWidth: "400px",
+          fontFamily: "var(--font-SpaceMono, SpaceMono, monospace)",
         }}
       >
-
-        <div
-          className="absolute inset-0 rounded-2xl opacity-20 pointer-events-none"
-          style={{
-            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(0, 0, 0, 0.05) 100%)",
-          }}
-        />
-
         <div className="relative flex items-start space-x-3">
-
           <div className="flex-shrink-0 mt-0.5">{getIcon(notification.type)}</div>
 
- 
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold leading-relaxed">{notification.message}</p>
           </div>
 
-          <button onClick={() => showNotification(null)} className="flex-shrink-0 p-1 rounded-full transition-all duration-200 hover:bg-white hover:bg-opacity-20 active:scale-95">
+          <button onClick={() => showNotification(null)} className="flex-shrink-0 p-1 rounded border border-gray-800 transition-all duration-200 hover:bg-gray-800 hover:text-white active:scale-95">
             <X size={16} />
           </button>
         </div>

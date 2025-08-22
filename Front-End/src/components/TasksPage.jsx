@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNotification } from "../context/NotificationContext"; 
+import { useNotification } from "../context/NotificationContext";
 
 const TasksPage = () => {
   const { token } = useAuth();
-  const { showNotification } = useNotification(); 
+  const { showNotification } = useNotification();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -54,18 +53,15 @@ const TasksPage = () => {
 
   const savedPrefs = getSavedPreferences();
 
-
   const [filters, setFilters] = useState(savedPrefs.filters);
   const [sortBy, setSortBy] = useState(savedPrefs.sortBy);
   const [sortOrder, setSortOrder] = useState(savedPrefs.sortOrder);
 
-
   const [showFilters, setShowFilters] = useState(false);
-  const [expandedTasks, setExpandedTasks] = useState(new Set()); 
+  const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState(null); 
+  const [taskToDelete, setTaskToDelete] = useState(null);
   const filtersRef = useRef(null);
-
 
   const priorityColors = {
     Urgent: "bg-red-100 text-red-800 border-red-200",
@@ -75,7 +71,6 @@ const TasksPage = () => {
   };
 
   const priorityOrder = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
-
 
   const toggleDescription = (taskId) => {
     const newExpanded = new Set(expandedTasks);
@@ -100,7 +95,6 @@ const TasksPage = () => {
     }
   };
 
-
   const updateFilters = (newFilters) => {
     setFilters(newFilters);
     savePreferences(newFilters, sortBy, sortOrder);
@@ -111,12 +105,10 @@ const TasksPage = () => {
     savePreferences(filters, newSortBy, sortOrder);
   };
 
-
   const updateSortOrder = (newSortOrder) => {
     setSortOrder(newSortOrder);
     savePreferences(filters, sortBy, newSortOrder);
   };
-
 
   const truncateDescription = (text, maxLength = 100) => {
     if (!text) return "";
@@ -166,19 +158,18 @@ const TasksPage = () => {
       const newTask = await response.json();
       setTasks([...tasks, newTask]);
       resetForm();
-      showNotification("Task added successfully! 🎉", "success"); 
+      showNotification("Task added successfully! 🎉", "success");
     } catch (err) {
       setError("Failed to add task");
-      showNotification("Failed to add task", "error"); 
+      showNotification("Failed to add task", "error");
       console.error("Error adding task:", err);
     }
   };
 
-
   const updateTask = async (taskId, taskData) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tasks/${taskId}`, {
-        method: "PATCH", 
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -193,10 +184,10 @@ const TasksPage = () => {
       const updatedTask = await response.json();
       setTasks(tasks.map((task) => (task._id === taskId ? updatedTask : task)));
       resetForm();
-      showNotification("Task updated successfully! ✨", "success"); 
+      showNotification("Task updated successfully! ✨", "success");
     } catch (err) {
       setError("Failed to update task");
-      showNotification("Failed to update task", "error"); 
+      showNotification("Failed to update task", "error");
       console.error("Error updating task:", err);
     }
   };
@@ -222,10 +213,10 @@ const TasksPage = () => {
       }
 
       setTasks(tasks.filter((task) => task._id !== taskToDelete._id));
-      showNotification("Task deleted successfully! 🗑️", "success"); 
+      showNotification("Task deleted successfully! 🗑️", "success");
     } catch (err) {
       setError("Failed to delete task");
-      showNotification("Failed to delete task", "error"); 
+      showNotification("Failed to delete task", "error");
       console.error("Error deleting task:", err);
     } finally {
       setShowDeleteModal(false);
@@ -238,7 +229,6 @@ const TasksPage = () => {
     setTaskToDelete(null);
   };
 
-
   const toggleTaskCompletion = async (task) => {
     try {
       const updateData = {
@@ -246,7 +236,7 @@ const TasksPage = () => {
         priority: task.priority,
         dueDate: task.dueDate,
         tags: task.tags,
-        completed: !task.completed, 
+        completed: !task.completed,
       };
       await updateTask(task._id, updateData);
 
@@ -257,11 +247,10 @@ const TasksPage = () => {
       }
     } catch (err) {
       setError("Failed to update task");
-      showNotification("Failed to update task", "error"); 
+      showNotification("Failed to update task", "error");
       console.error("Error toggling task completion:", err);
     }
   };
-
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -306,7 +295,6 @@ const TasksPage = () => {
     setShowAddForm(true);
   };
 
-
   const getFilteredAndSortedTasks = () => {
     let filteredTasks = [...tasks];
 
@@ -325,7 +313,6 @@ const TasksPage = () => {
     if (filters.search) {
       filteredTasks = filteredTasks.filter((task) => task.title.toLowerCase().includes(filters.search.toLowerCase()) || (task.description && task.description.toLowerCase().includes(filters.search.toLowerCase())));
     }
-
 
     filteredTasks.sort((a, b) => {
       let aValue, bValue;
@@ -360,12 +347,10 @@ const TasksPage = () => {
     return filteredTasks;
   };
 
-
   const getUniqueTags = () => {
     const allTags = tasks.flatMap((task) => task.tags || []);
     return [...new Set(allTags)];
   };
-
 
   useEffect(() => {
     fetchTasks();
@@ -388,62 +373,71 @@ const TasksPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2" style={{ borderColor: "#52796f" }}></div>
+        <div
+          className="w-12 h-12 bg-gray-800 border-2 border-gray-800"
+          style={{
+            boxShadow: "2px 2px #323232",
+            borderRadius: "5px",
+            animation: "spin 1s linear infinite",
+          }}
+        ></div>
       </div>
     );
   }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-
+      {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: "#2d5016" }}>
+          <h1 className="text-3xl font-bold text-gray-800" style={{ fontFamily: "var(--font-DelaGothicOne)" }}>
             📝 Smart Todo List
           </h1>
-          <p className="text-sm mt-1" style={{ color: "#6b7280" }}>
+          <p className="text-gray-600 font-semibold mt-1" style={{ fontFamily: "var(--font-SpaceMono)" }}>
             Organize your tasks with intelligent prioritization
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-
+          {/* Filters Button */}
           <div className="relative" ref={filtersRef}>
-            <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors duration-200 hover:bg-gray-50" style={{ borderColor: "rgba(82, 121, 111, 0.2)", color: "#52796f" }}>
+            <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-800 text-gray-800 font-semibold transition-all duration-200 hover:bg-gray-100" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
               </svg>
               Filters
             </button>
 
-  
+            {/* Filters Dropdown */}
             {showFilters && (
-              <div className="absolute right-0 mt-2 w-80 rounded-lg shadow-lg py-4 px-4 ring-1 ring-black ring-opacity-5 z-50" style={{ backgroundColor: "#fefcf7", borderColor: "rgba(82, 121, 111, 0.2)" }}>
+              <div className="absolute right-0 mt-2 w-80 bg-gray-300 border-2 border-gray-800 py-4 px-4 z-50" style={{ boxShadow: "4px 4px #323232", borderRadius: "5px" }}>
                 <div className="space-y-4">
-
+                  {/* Search */}
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
-                      Search
+                    <label className="block text-xs font-semibold mb-1 text-gray-800" style={{ fontFamily: "var(--font-SpaceMono)" }}>
+                      SEARCH
                     </label>
-                    <input type="text" value={filters.search} onChange={(e) => updateFilters({ ...filters, search: e.target.value })} placeholder="Search tasks..." className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)", focusRingColor: "#52796f" }} />
+                    <input type="text" value={filters.search} onChange={(e) => updateFilters({ ...filters, search: e.target.value })} placeholder="Search tasks..." className="w-full px-3 py-2 border-2 border-gray-800 text-sm font-semibold bg-white text-gray-800" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }} />
                   </div>
 
+                  {/* Status */}
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
-                      Status
+                    <label className="block text-xs font-semibold mb-1 text-gray-800" style={{ fontFamily: "var(--font-SpaceMono)" }}>
+                      STATUS
                     </label>
-                    <select value={filters.status} onChange={(e) => updateFilters({ ...filters, status: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
+                    <select value={filters.status} onChange={(e) => updateFilters({ ...filters, status: e.target.value })} className="w-full px-3 py-2 border-2 border-gray-800 text-sm font-semibold bg-white text-gray-800" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
                       <option value="all">All Tasks</option>
                       <option value="pending">Pending</option>
                       <option value="completed">Completed</option>
                     </select>
                   </div>
 
+                  {/* Priority */}
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
-                      Priority
+                    <label className="block text-xs font-semibold mb-1 text-gray-800" style={{ fontFamily: "var(--font-SpaceMono)" }}>
+                      PRIORITY
                     </label>
-                    <select value={filters.priority} onChange={(e) => updateFilters({ ...filters, priority: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
+                    <select value={filters.priority} onChange={(e) => updateFilters({ ...filters, priority: e.target.value })} className="w-full px-3 py-2 border-2 border-gray-800 text-sm font-semibold bg-white text-gray-800" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
                       <option value="all">All Priorities</option>
                       <option value="Urgent">Urgent</option>
                       <option value="High">High</option>
@@ -452,13 +446,13 @@ const TasksPage = () => {
                     </select>
                   </div>
 
-
+                  {/* Tags */}
                   {uniqueTags.length > 0 && (
                     <div>
-                      <label className="block text-xs font-medium mb-1" style={{ color: "#6b7280" }}>
-                        Tag
+                      <label className="block text-xs font-semibold mb-1 text-gray-800" style={{ fontFamily: "var(--font-SpaceMono)" }}>
+                        TAG
                       </label>
-                      <select value={filters.tag} onChange={(e) => updateFilters({ ...filters, tag: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
+                      <select value={filters.tag} onChange={(e) => updateFilters({ ...filters, tag: e.target.value })} className="w-full px-3 py-2 border-2 border-gray-800 text-sm font-semibold bg-white text-gray-800" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
                         <option value="all">All Tags</option>
                         {uniqueTags.map((tag) => (
                           <option key={tag} value={tag}>
@@ -469,19 +463,19 @@ const TasksPage = () => {
                     </div>
                   )}
 
-
-                  <div className="border-t pt-4" style={{ borderColor: "rgba(82, 121, 111, 0.1)" }}>
-                    <label className="block text-xs font-medium mb-2" style={{ color: "#6b7280" }}>
-                      Sort By
+                  {/* Sort Options */}
+                  <div className="border-t-2 border-gray-800 pt-4">
+                    <label className="block text-xs font-semibold mb-2 text-gray-800" style={{ fontFamily: "var(--font-SpaceMono)" }}>
+                      SORT BY
                     </label>
                     <div className="flex gap-2">
-                      <select value={sortBy} onChange={(e) => updateSortBy(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
+                      <select value={sortBy} onChange={(e) => updateSortBy(e.target.value)} className="flex-1 px-3 py-2 border-2 border-gray-800 text-sm font-semibold bg-white text-gray-800" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
                         <option value="dueDate">Due Date</option>
                         <option value="priority">Priority</option>
                         <option value="created">Created</option>
                         <option value="title">Title</option>
                       </select>
-                      <button onClick={() => updateSortOrder(sortOrder === "asc" ? "desc" : "asc")} className="px-3 py-2 border rounded-lg hover:bg-gray-50 transition-colors duration-200" style={{ borderColor: "rgba(82, 121, 111, 0.2)", color: "#52796f" }}>
+                      <button onClick={() => updateSortOrder(sortOrder === "asc" ? "desc" : "asc")} className="px-3 py-2 border-2 border-gray-800 bg-white text-gray-800 font-bold transition-all duration-200 hover:bg-gray-100" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
                         {sortOrder === "asc" ? "↑" : "↓"}
                       </button>
                     </div>
@@ -491,7 +485,8 @@ const TasksPage = () => {
             )}
           </div>
 
-          <button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium transition-all duration-300 hover:scale-105 shadow-lg" style={{ background: "linear-gradient(to right, #52796f, #84a98c)" }}>
+          {/* Add Task Button */}
+          <button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-800 text-gray-800 font-semibold transition-all duration-200 hover:bg-gray-100" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
@@ -500,87 +495,76 @@ const TasksPage = () => {
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-200 border-2 border-red-600 text-red-800 px-4 py-3 font-semibold" style={{ boxShadow: "4px 4px #dc2626", borderRadius: "5px" }}>
+          {error}
+        </div>
+      )}
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>}
-
+      {/* Stats Cards */}
       {tasks.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-lg border" style={{ backgroundColor: "#fefcf7", borderColor: "rgba(82, 121, 111, 0.2)" }}>
+          <div className="p-4 bg-gray-300 border-2 border-gray-800" style={{ boxShadow: "4px 4px #323232", borderRadius: "5px" }}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <span className="text-blue-600 font-bold">{tasks.length}</span>
+              <div className="w-10 h-10 bg-blue-200 border-2 border-gray-800 flex items-center justify-center text-blue-800 font-bold" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
+                {tasks.length}
               </div>
               <div>
-                <p className="text-sm font-medium" style={{ color: "#2d5016" }}>
-                  Total Tasks
-                </p>
-                <p className="text-xs" style={{ color: "#6b7280" }}>
-                  All tasks created
-                </p>
+                <p className="text-sm font-bold text-gray-800">Total Tasks</p>
+                <p className="text-xs font-semibold text-gray-600">All tasks created</p>
               </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-lg border" style={{ backgroundColor: "#fefcf7", borderColor: "rgba(82, 121, 111, 0.2)" }}>
+          <div className="p-4 bg-gray-300 border-2 border-gray-800" style={{ boxShadow: "4px 4px #323232", borderRadius: "5px" }}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                <span className="text-green-600 font-bold">{tasks.filter((t) => t.completed).length}</span>
+              <div className="w-10 h-10 bg-green-200 border-2 border-gray-800 flex items-center justify-center text-green-800 font-bold" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
+                {tasks.filter((t) => t.completed).length}
               </div>
               <div>
-                <p className="text-sm font-medium" style={{ color: "#2d5016" }}>
-                  Completed
-                </p>
-                <p className="text-xs" style={{ color: "#6b7280" }}>
-                  Tasks finished
-                </p>
+                <p className="text-sm font-bold text-gray-800">Completed</p>
+                <p className="text-xs font-semibold text-gray-600">Tasks finished</p>
               </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-lg border" style={{ backgroundColor: "#fefcf7", borderColor: "rgba(82, 121, 111, 0.2)" }}>
+          <div className="p-4 bg-gray-300 border-2 border-gray-800" style={{ boxShadow: "4px 4px #323232", borderRadius: "5px" }}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                <span className="text-orange-600 font-bold">{tasks.filter((t) => !t.completed).length}</span>
+              <div className="w-10 h-10 bg-orange-200 border-2 border-gray-800 flex items-center justify-center text-orange-800 font-bold" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
+                {tasks.filter((t) => !t.completed).length}
               </div>
               <div>
-                <p className="text-sm font-medium" style={{ color: "#2d5016" }}>
-                  Pending
-                </p>
-                <p className="text-xs" style={{ color: "#6b7280" }}>
-                  Tasks remaining
-                </p>
+                <p className="text-sm font-bold text-gray-800">Pending</p>
+                <p className="text-xs font-semibold text-gray-600">Tasks remaining</p>
               </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-lg border" style={{ backgroundColor: "#fefcf7", borderColor: "rgba(82, 121, 111, 0.2)" }}>
+          <div className="p-4 bg-gray-300 border-2 border-gray-800" style={{ boxShadow: "4px 4px #323232", borderRadius: "5px" }}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <span className="text-red-600 font-bold">{tasks.filter((t) => !t.completed && (t.priority === "Urgent" || t.priority === "High")).length}</span>
+              <div className="w-10 h-10 bg-red-200 border-2 border-gray-800 flex items-center justify-center text-red-800 font-bold" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
+                {tasks.filter((t) => !t.completed && (t.priority === "Urgent" || t.priority === "High")).length}
               </div>
               <div>
-                <p className="text-sm font-medium" style={{ color: "#2d5016" }}>
-                  High Priority
-                </p>
-                <p className="text-xs" style={{ color: "#6b7280" }}>
-                  Urgent & High tasks
-                </p>
+                <p className="text-sm font-bold text-gray-800">High Priority</p>
+                <p className="text-xs font-semibold text-gray-600">Urgent & High tasks</p>
               </div>
             </div>
           </div>
         </div>
       )}
 
-
+      {/* Add/Edit Task Modal */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: "#fefcf7" }}>
+          <div className="bg-gray-300 border-2 border-gray-800 max-w-md w-full max-h-[90vh] overflow-y-auto" style={{ boxShadow: "6px 6px #323232", borderRadius: "5px" }}>
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold" style={{ color: "#2d5016" }}>
+                <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: "var(--font-DelaGothicOne)" }}>
                   {editingTask ? "Edit Task" : "Add New Task"}
                 </h2>
-                <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
+                <button onClick={resetForm} className="text-gray-800 hover:text-gray-600 font-bold">
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -588,33 +572,32 @@ const TasksPage = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
-                    Title *
+                  <label className="block text-sm font-semibold mb-1 text-gray-800" style={{ fontFamily: "var(--font-SpaceMono)" }}>
+                    TITLE *
                   </label>
-                  <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }} placeholder="Enter task title" />
+                  <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required className="w-full px-3 py-2 border-2 border-gray-800 bg-white text-gray-800 font-semibold" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }} placeholder="Enter task title" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
-                    Description
+                  <label className="block text-sm font-semibold mb-1 text-gray-800" style={{ fontFamily: "var(--font-SpaceMono)" }}>
+                    DESCRIPTION
                   </label>
-                  <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }} placeholder="Enter task description" />
+                  <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} className="w-full px-3 py-2 border-2 border-gray-800 bg-white text-gray-800 font-semibold" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }} placeholder="Enter task description" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
-                    Due Date
+                  <label className="block text-sm font-semibold mb-1 text-gray-800" style={{ fontFamily: "var(--font-SpaceMono)" }}>
+                    DUE DATE
                   </label>
-                  <input type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }} />
+                  <input type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} className="w-full px-3 py-2 border-2 border-gray-800 bg-white text-gray-800 font-semibold" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
-                    Priority
+                  <label className="block text-sm font-semibold mb-1 text-gray-800" style={{ fontFamily: "var(--font-SpaceMono)" }}>
+                    PRIORITY
                   </label>
-                  <select value={formData.priority} onChange={(e) => setFormData({ ...formData, priority: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
+                  <select value={formData.priority} onChange={(e) => setFormData({ ...formData, priority: e.target.value })} className="w-full px-3 py-2 border-2 border-gray-800 bg-white text-gray-800 font-semibold" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
                     <option value="High">High</option>
@@ -622,23 +605,19 @@ const TasksPage = () => {
                   </select>
                 </div>
 
-
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "#2d5016" }}>
-                    Tags
+                  <label className="block text-sm font-semibold mb-1 text-gray-800" style={{ fontFamily: "var(--font-SpaceMono)" }}>
+                    TAGS
                   </label>
-                  <input type="text" value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }} placeholder="Enter tags separated by commas" />
-                  <p className="text-xs mt-1" style={{ color: "#6b7280" }}>
-                    Separate multiple tags with commas
-                  </p>
+                  <input type="text" value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} className="w-full px-3 py-2 border-2 border-gray-800 bg-white text-gray-800 font-semibold" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }} placeholder="Enter tags separated by commas" />
+                  <p className="text-xs mt-1 font-semibold text-gray-600">Separate multiple tags with commas</p>
                 </div>
 
-
                 <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={resetForm} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors duration-200" style={{ borderColor: "rgba(82, 121, 111, 0.2)", color: "#52796f" }}>
+                  <button type="button" onClick={resetForm} className="flex-1 px-4 py-2 border-2 border-gray-800 bg-white text-gray-800 font-semibold hover:bg-gray-100 transition-all duration-200" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
                     Cancel
                   </button>
-                  <button type="submit" className="flex-1 px-4 py-2 text-white rounded-lg font-medium transition-all duration-300 hover:scale-105" style={{ background: "linear-gradient(to right, #52796f, #84a98c)" }}>
+                  <button type="submit" className="flex-1 px-4 py-2 bg-gray-800 border-2 border-gray-800 text-white font-semibold transition-all duration-200 hover:bg-gray-700" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
                     {editingTask ? "Update Task" : "Add Task"}
                   </button>
                 </div>
@@ -648,43 +627,36 @@ const TasksPage = () => {
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
       {showDeleteModal && taskToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full" style={{ backgroundColor: "#fefcf7" }}>
+          <div className="bg-gray-300 border-2 border-gray-800 max-w-md w-full" style={{ boxShadow: "6px 6px #323232", borderRadius: "5px" }}>
             <div className="p-6">
               <div className="flex items-center justify-center mb-4">
-                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-12 h-12 bg-red-200 border-2 border-gray-800 flex items-center justify-center" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
+                  <svg className="w-6 h-6 text-red-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </div>
               </div>
 
               <div className="text-center mb-6">
-                <h3 className="text-lg font-bold mb-2" style={{ color: "#2d5016" }}>
+                <h3 className="text-lg font-bold mb-2 text-gray-800" style={{ fontFamily: "var(--font-DelaGothicOne)" }}>
                   Delete Task
                 </h3>
-                <p className="text-sm mb-2" style={{ color: "#6b7280" }}>
-                  Are you sure you want to delete this task?
-                </p>
-                <div className="p-3 rounded-lg border bg-gray-50 text-left" style={{ borderColor: "rgba(82, 121, 111, 0.2)" }}>
-                  <p className="font-medium text-sm" style={{ color: "#2d5016" }}>
-                    "{taskToDelete.title}"
-                  </p>
-                  {taskToDelete.description && (
-                    <p className="text-xs mt-1" style={{ color: "#6b7280" }}>
-                      {truncateDescription(taskToDelete.description, 60)}
-                    </p>
-                  )}
+                <p className="text-sm mb-2 font-semibold text-gray-600">Are you sure you want to delete this task?</p>
+                <div className="p-3 bg-white border-2 border-gray-800 text-left" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
+                  <p className="font-bold text-sm text-gray-800">"{taskToDelete.title}"</p>
+                  {taskToDelete.description && <p className="text-xs mt-1 font-semibold text-gray-600">{truncateDescription(taskToDelete.description, 60)}</p>}
                 </div>
-                <p className="text-xs mt-3 text-red-600">This action cannot be undone.</p>
+                <p className="text-xs mt-3 text-red-800 font-semibold">This action cannot be undone.</p>
               </div>
 
               <div className="flex gap-3">
-                <button onClick={cancelDelete} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors duration-200" style={{ borderColor: "rgba(82, 121, 111, 0.2)", color: "#52796f" }}>
+                <button onClick={cancelDelete} className="flex-1 px-4 py-2 border-2 border-gray-800 bg-white text-gray-800 font-semibold hover:bg-gray-100 transition-all duration-200" style={{ boxShadow: "2px 2px #323232", borderRadius: "5px" }}>
                   Cancel
                 </button>
-                <button onClick={confirmDelete} className="flex-1 px-4 py-2 text-white rounded-lg font-medium transition-all duration-300 hover:scale-105 bg-red-600 hover:bg-red-700">
+                <button onClick={confirmDelete} className="flex-1 px-4 py-2 bg-red-600 border-2 border-red-600 text-white font-semibold transition-all duration-200 hover:bg-red-700" style={{ boxShadow: "2px 2px #dc2626", borderRadius: "5px" }}>
                   Delete Task
                 </button>
               </div>
@@ -693,32 +665,30 @@ const TasksPage = () => {
         </div>
       )}
 
-
+      {/* Tasks List */}
       <div className="space-y-3">
         {filteredTasks.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 bg-gray-300 border-2 border-gray-800" style={{ boxShadow: "4px 4px #323232", borderRadius: "5px" }}>
             <div className="text-6xl mb-4">📝</div>
-            <h3 className="text-xl font-semibold mb-2" style={{ color: "#2d5016" }}>
+            <h3 className="text-xl font-bold mb-2 text-gray-800" style={{ fontFamily: "var(--font-DelaGothicOne)" }}>
               {tasks.length === 0 ? "No tasks yet" : "No tasks match your filters"}
             </h3>
-            <p className="text-sm" style={{ color: "#6b7280" }}>
-              {tasks.length === 0 ? "Create your first task to get started!" : "Try adjusting your filters to see more tasks."}
-            </p>
+            <p className="text-sm font-semibold text-gray-600">{tasks.length === 0 ? "Create your first task to get started!" : "Try adjusting your filters to see more tasks."}</p>
           </div>
         ) : (
           filteredTasks.map((task) => (
             <div
               key={task._id}
-              className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${task.completed ? "opacity-75" : ""}`}
+              className={`p-4 bg-gray-300 border-2 border-gray-800 transition-all duration-200 hover:bg-gray-400 ${task.completed ? "opacity-75" : ""}`}
               style={{
-                backgroundColor: "#fefcf7",
-                borderColor: "rgba(82, 121, 111, 0.2)",
-                borderLeft: `4px solid ${task.priority === "Urgent" ? "#ef4444" : task.priority === "High" ? "#f97316" : task.priority === "Medium" ? "#eab308" : "#22c55e"}`,
+                boxShadow: "4px 4px #323232",
+                borderRadius: "5px",
+                borderLeft: `6px solid ${task.priority === "Urgent" ? "#ef4444" : task.priority === "High" ? "#f97316" : task.priority === "Medium" ? "#eab308" : "#22c55e"}`,
               }}
             >
               <div className="flex items-start gap-3">
-
-                <button onClick={() => toggleTaskCompletion(task)} className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors duration-200 ${task.completed ? "bg-green-500 border-green-500" : "border-gray-300 hover:border-green-400"}`}>
+                {/* Checkbox */}
+                <button onClick={() => toggleTaskCompletion(task)} className={`mt-1 w-5 h-5 border-2 border-gray-800 flex items-center justify-center transition-colors duration-200 ${task.completed ? "bg-green-500 border-green-500" : "bg-white hover:bg-gray-100"}`} style={{ borderRadius: "5px" }}>
                   {task.completed && (
                     <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -729,18 +699,14 @@ const TasksPage = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <h3 className={`font-medium ${task.completed ? "line-through text-gray-500" : ""}`} style={{ color: task.completed ? "#6b7280" : "#2d5016" }}>
-                        {task.title}
-                      </h3>
+                      <h3 className={`font-bold ${task.completed ? "line-through text-gray-500" : "text-gray-800"}`}>{task.title}</h3>
 
                       {task.description && task.description.trim() && (
                         <div className="mt-2 w-full max-w-full overflow-hidden">
-                          <div className={`text-sm ${task.completed ? "line-through text-gray-400" : ""}`} style={{ color: task.completed ? "#9ca3af" : "#6b7280" }}>
-                            {expandedTasks.has(task._id) ? <div className="whitespace-pre-wrap break-all max-w-full">{task.description}</div> : <div className="break-all max-w-full">{truncateDescription(task.description)}</div>}
-                          </div>
+                          <div className={`text-sm font-semibold ${task.completed ? "line-through text-gray-500" : "text-gray-600"}`}>{expandedTasks.has(task._id) ? <div className="whitespace-pre-wrap break-all max-w-full">{task.description}</div> : <div className="break-all max-w-full">{truncateDescription(task.description)}</div>}</div>
 
                           {task.description.length > 100 && (
-                            <button onClick={() => toggleDescription(task._id)} className="text-xs mt-1 text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center gap-1">
+                            <button onClick={() => toggleDescription(task._id)} className="text-xs mt-1 text-gray-800 hover:text-gray-600 font-semibold transition-colors duration-200 flex items-center gap-1">
                               {expandedTasks.has(task._id) ? (
                                 <>
                                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -762,14 +728,14 @@ const TasksPage = () => {
                       )}
                     </div>
 
-
+                    {/* Action Buttons */}
                     <div className="flex items-center gap-2">
-                      <button onClick={() => startEditing(task)} className="p-1 text-gray-400 hover:text-blue-600 transition-colors duration-200" title="Edit task">
+                      <button onClick={() => startEditing(task)} className="p-1 text-gray-600 hover:text-gray-800 font-bold transition-colors duration-200" title="Edit task">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                      <button onClick={() => handleDeleteClick(task)} className="p-1 text-gray-400 hover:text-red-600 transition-colors duration-200" title="Delete task">
+                      <button onClick={() => handleDeleteClick(task)} className="p-1 text-gray-600 hover:text-red-600 font-bold transition-colors duration-200" title="Delete task">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
@@ -777,14 +743,16 @@ const TasksPage = () => {
                     </div>
                   </div>
 
-
+                  {/* Task Meta */}
                   <div className="flex flex-wrap items-center gap-3 mt-3">
+                    {/* Priority Badge */}
+                    <span className={`px-2 py-1 text-xs font-bold border-2 border-gray-800 ${task.priority === "Urgent" ? "bg-red-200 text-red-800" : task.priority === "High" ? "bg-orange-200 text-orange-800" : task.priority === "Medium" ? "bg-yellow-200 text-yellow-800" : "bg-green-200 text-green-800"}`} style={{ boxShadow: "1px 1px #323232", borderRadius: "5px" }}>
+                      {task.priority}
+                    </span>
 
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${priorityColors[task.priority]}`}>{task.priority}</span>
-
-
+                    {/* Due Date */}
                     {task.dueDate && (
-                      <span className="flex items-center gap-1 text-xs" style={{ color: "#6b7280" }}>
+                      <span className="flex items-center gap-1 text-xs font-semibold text-gray-600">
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
@@ -792,10 +760,11 @@ const TasksPage = () => {
                       </span>
                     )}
 
+                    {/* Tags */}
                     {task.tags && task.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {task.tags.map((tag, index) => (
-                          <span key={index} className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                          <span key={index} className="px-2 py-1 text-xs font-bold bg-white border-2 border-gray-800 text-gray-800" style={{ boxShadow: "1px 1px #323232", borderRadius: "5px" }}>
                             #{tag}
                           </span>
                         ))}
